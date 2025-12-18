@@ -1,0 +1,7 @@
+{
+  "name": "jrayl-driver-docs",
+  "private": true,
+  "scripts": {
+    "build": "node generate-docs-manifest.js"
+  }
+}
