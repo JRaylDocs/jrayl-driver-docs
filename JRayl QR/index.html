@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Driver Support Documents</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Mobile-first enhancements -->
+  <style>
+    main {
+      padding: 16px;
+    }
+
+    .docs-section {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .group-title {
+      margin-top: 28px;
+      margin-bottom: 8px;
+    }
+
+    .group-subtitle {
+      margin-top: -4px;
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 720px) {
+      .cards-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .doc-card {
+      padding: 14px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .doc-card h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      line-height: 1.25;
+    }
+
+    .doc-btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Driver Support Documents</h1>
+    <p>Your quick-access resource hub</p>
+  </header>
+
+  <main>
+    <section class="docs-section">
+
+      <!-- DRIVER REFERENCE (PINNED) -->
+      <h2>Driver Reference</h2>
+      <p class="group-subtitle">Quick access (pinned)</p>
+      <div id="pinnedList" class="cards-grid"></div>
+
+      <!-- EMPLOYEE DOCS -->
+      <h2 class="group-title">JRayl Employee Docs</h2>
+      <div id="group-employee" class="cards-grid"></div>
+
+      <!-- DOT COMPLIANCE -->
+      <h2 class="group-title">DOT Compliance</h2>
+      <div id="group-dot" class="cards-grid"></div>
+
+      <!-- VEHICLE MAINTENANCE -->
+      <h2 class="group-title">Vehicle Maintenance</h2>
+      <div id="group-maintenance" class="cards-grid"></div>
+
+      <!-- OTHER -->
+      <h2 class="group-title">Other Documents</h2>
+      <div id="group-other" class="cards-grid"></div>
+
+    </section>
+  </main>
+
+  <footer>
+    <p>© JRayl Transport – Driver Resource Portal</p>
+  </footer>
+
+  <script>
+    function createCard(doc) {
+      const card = document.createElement("div");
+      card.className = "doc-card";
+
+      const title = document.createElement("h3");
+      title.textContent = doc.title;
+
+      const btn = document.createElement("a");
+      btn.className = "doc-btn";
+      btn.href = doc.href;
+      btn.target = "_blank";
+      btn.rel = "noopener";
+      btn.textContent = doc.type === "pdf" ? "Open PDF" : "Open Document";
+
+      card.appendChild(title);
+      card.appendChild(btn);
+
+      return card;
+    }
+
+    function renderList(id, docs) {
+      const container = document.getElementById(id);
+      container.innerHTML = "";
+      docs.forEach(doc => container.appendChild(createCard(doc)));
+    }
+
+    async function loadDocs() {
+      try {
+        const res = await fetch("docs-manifest.json", { cache: "no-store" });
+        const docs = await res.json();
+
+        renderList("pinnedList", docs.filter(d => d.pinned));
+        renderList("group-employee", docs.filter(d => d.group === "employee"));
+        renderList("group-dot", docs.filter(d => d.group === "dot"));
+        renderList("group-maintenance", docs.filter(d => d.group === "maintenance"));
+        renderList("group-other", docs.filter(d => d.group === "other"));
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("group-other").innerHTML =
+          "<p>Unable to load documents.</p>";
+      }
+    }
+
+    loadDocs();
+  </script>
+</body>
+</html>
+
