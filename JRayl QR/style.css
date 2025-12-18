@@ -1,0 +1,6 @@
+
+body { margin:0; font-family:Arial,Helvetica,sans-serif; background:#f4f4f4; }
+header { text-align:center; background:#fff; padding:30px 20px; border-bottom:4px solid #c8102e; }
+.docs-section { max-width:900px; margin:40px auto; padding:0 20px; }
+.doc-card { background:#fff; padding:20px; margin:20px 0; border-left:6px solid #c8102e; border-radius:6px; }
+.doc-btn { display:inline-block; margin-top:10px; padding:10px 18px; background:#c8102e; color:#fff; text-decoration:none; border-radius:4px; }
