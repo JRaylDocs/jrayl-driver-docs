@@ -3,27 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Driver Support Documents</title>
+  <title>JRayl Driver Support Documents</title>
+
+  <!-- Main stylesheet -->
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Mobile-first enhancements -->
+  <!-- Mobile-first enhancements (safe to keep inline) -->
   <style>
     main {
       padding: 16px;
     }
 
     .docs-section {
-      max-width: 900px;
+      max-width: 960px;
       margin: 0 auto;
+    }
+
+    .site-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .site-logo {
+      max-width: 180px;
+      width: 100%;
+      height: auto;
+      margin: 0 auto 12px;
+      display: block;
     }
 
     .group-title {
       margin-top: 28px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .group-subtitle {
-      margin-top: -4px;
+      margin-top: -2px;
       margin-bottom: 12px;
       font-size: 0.95rem;
       opacity: 0.8;
@@ -68,11 +83,19 @@
 </head>
 
 <body>
-  <header>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <img
+      src="jrayl-logo.png"
+      alt="JRayl Transport Logo"
+      class="site-logo"
+    />
     <h1>Driver Support Documents</h1>
     <p>Your quick-access resource hub</p>
   </header>
 
+  <!-- MAIN CONTENT -->
   <main>
     <section class="docs-section">
 
@@ -100,10 +123,12 @@
     </section>
   </main>
 
+  <!-- FOOTER -->
   <footer>
     <p>© JRayl Transport – Driver Resource Portal</p>
   </footer>
 
+  <!-- AUTO-DOCUMENT LOADER -->
   <script>
     function createCard(doc) {
       const card = document.createElement("div");
@@ -121,7 +146,6 @@
 
       card.appendChild(title);
       card.appendChild(btn);
-
       return card;
     }
 
@@ -151,6 +175,9 @@
 
     loadDocs();
   </script>
+
 </body>
 </html>
+
+
 
