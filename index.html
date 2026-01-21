@@ -8,11 +8,9 @@
   <!-- Main stylesheet -->
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Mobile-first enhancements (safe to keep inline) -->
+  <!-- Mobile-first enhancements -->
   <style>
-    main {
-      padding: 16px;
-    }
+    main { padding: 16px; }
 
     .docs-section {
       max-width: 960px;
@@ -79,6 +77,23 @@
       font-weight: 600;
       text-decoration: none;
     }
+
+    /* Toggle styles */
+    .toggle-header {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-header span {
+      margin-left: auto;
+    }
+
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 
@@ -86,11 +101,7 @@
 
   <!-- HEADER -->
   <header class="site-header">
-    <img
-      src="jrayl-logo.png"
-      alt="JRayl Transport Logo"
-      class="site-logo"
-    />
+    <img src="jrayl-logo.png" alt="JRayl Transport Logo" class="site-logo" />
     <h1>Driver Support Documents</h1>
     <p>Your quick-access resource hub</p>
   </header>
@@ -99,7 +110,7 @@
   <main>
     <section class="docs-section">
 
-      <!-- DRIVER REFERENCE (PINNED) -->
+      <!-- DRIVER REFERENCE -->
       <h2>Driver Reference</h2>
       <p class="group-subtitle">Quick access (pinned)</p>
       <div id="pinnedList" class="cards-grid"></div>
@@ -112,9 +123,11 @@
       <h2 class="group-title">DOT Compliance</h2>
       <div id="group-dot" class="cards-grid"></div>
 
-      <!-- VEHICLE MAINTENANCE -->
-      <h2 class="group-title">Vehicle Maintenance</h2>
-      <div id="group-maintenance" class="cards-grid"></div>
+      <!-- VEHICLE MAINTENANCE (COLLAPSIBLE) -->
+      <h2 class="group-title toggle-header" onclick="toggleSection('group-maintenance')">
+        Vehicle Maintenance <span id="icon-group-maintenance">▶</span>
+      </h2>
+      <div id="group-maintenance" class="cards-grid hidden"></div>
 
       <!-- OTHER -->
       <h2 class="group-title">Other Documents</h2>
@@ -128,7 +141,7 @@
     <p>© JRayl Transport – Driver Resource Portal</p>
   </footer>
 
-  <!-- AUTO-DOCUMENT LOADER -->
+  <!-- SCRIPT -->
   <script>
     function createCard(doc) {
       const card = document.createElement("div");
@@ -155,6 +168,19 @@
       docs.forEach(doc => container.appendChild(createCard(doc)));
     }
 
+    function toggleSection(id) {
+      const section = document.getElementById(id);
+      const icon = document.getElementById("icon-" + id);
+
+      if (section.classList.contains("hidden")) {
+        section.classList.remove("hidden");
+        if (icon) icon.textContent = "▼";
+      } else {
+        section.classList.add("hidden");
+        if (icon) icon.textContent = "▶";
+      }
+    }
+
     async function loadDocs() {
       try {
         const res = await fetch("docs-manifest.json", { cache: "no-store" });
@@ -178,6 +204,7 @@
 
 </body>
 </html>
+
 
 
 
