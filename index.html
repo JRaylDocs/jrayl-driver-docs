@@ -10,22 +10,6 @@
   <style>
     main { padding: 16px; }
 
-    /* TOP MESSAGE BAR - RED TEXT WITH BLACK OUTLINE */
-    .site-message {
-      background: #ffffff;
-      text-align: center;
-      padding: 12px 16px;
-      font-weight: 800;
-      font-size: 1rem;
-      letter-spacing: 0.3px;
-      color: red;
-      text-shadow:
-        -1px -1px 0 #000,
-         1px -1px 0 #000,
-        -1px  1px 0 #000,
-         1px  1px 0 #000;
-    }
-
     .docs-section {
       max-width: 960px;
       margin: 0 auto;
@@ -44,16 +28,28 @@
       display: block;
     }
 
-    .group-title {
-      margin-top: 28px;
-      margin-bottom: 6px;
-    }
+    /* BIG MESSAGE BAR - placed under the hub subtitle */
+    .site-message {
+      display: inline-block;
+      margin: 12px auto 0;
+      padding: 14px 18px;
+      background: #ffffff;
+      border: 3px solid #000;
+      border-radius: 14px;
 
-    .group-subtitle {
-      margin-top: -2px;
-      margin-bottom: 12px;
-      font-size: 0.95rem;
-      opacity: 0.8;
+      font-weight: 900;
+      font-size: 1.25rem;   /* bigger */
+      line-height: 1.25;
+      letter-spacing: 0.2px;
+
+      color: #ff0000;       /* red */
+      text-shadow:
+        -1px -1px 0 #000,
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000,
+         0px  2px 0 #000;   /* extra punch */
+      max-width: 920px;
     }
 
     .cards-grid {
@@ -106,21 +102,44 @@
       font-weight: 700;
     }
 
+    /* Nested accordion (inside DOT) */
+    .nested-wrap {
+      margin-top: 10px;
+      padding-left: 10px;
+      border-left: 4px solid rgba(0,0,0,0.12);
+    }
+
+    .nested-header {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 14px 0 8px;
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .nested-header .chev {
+      margin-left: auto;
+      font-weight: 900;
+    }
+
     .hidden { display: none; }
   </style>
 </head>
 
 <body>
 
-  <!-- EASY-TO-CHANGE SITE MESSAGE -->
-  <div class="site-message">
-    Want to know more about our driver team program? Contact DET.
-  </div>
-
   <header class="site-header">
     <img src="jrayl-logo.png" alt="JRayl Transport Logo" class="site-logo" />
     <h1>Driver Support Documents</h1>
     <p>Your quick-access resource hub</p>
+
+    <!-- EASY-TO-CHANGE MESSAGE (now under the hub subtitle) -->
+    <div class="site-message" id="siteMessage">
+      Want to know more about our driver team program? Contact DET.
+    </div>
   </header>
 
   <main>
@@ -136,22 +155,32 @@
       </h2>
       <div id="panel-updates" class="cards-grid hidden"></div>
 
-      <!-- ACCORDION SECTIONS -->
+      <!-- EMPLOYEE -->
       <h2 class="accordion-header" onclick="toggleAccordion('employee')">
         JRayl Employee Docs <span id="chev-employee" class="chev">▶</span>
       </h2>
       <div id="panel-employee" class="cards-grid hidden"></div>
 
+      <!-- DOT (NOW CONTAINS NESTED TRAILER REGISTRATION) -->
       <h2 class="accordion-header" onclick="toggleAccordion('dot')">
         DOT Compliance <span id="chev-dot" class="chev">▶</span>
       </h2>
-      <div id="panel-dot" class="cards-grid hidden"></div>
 
-      <h2 class="accordion-header" onclick="toggleAccordion('maintenance')">
-        Trailer Registration <span id="chev-maintenance" class="chev">▶</span>
-      </h2>
-      <div id="panel-maintenance" class="cards-grid hidden"></div>
+      <!-- DOT PANEL WRAPPER -->
+      <div id="panel-dot" class="hidden">
+        <!-- DOT docs list -->
+        <div id="dotDocs" class="cards-grid"></div>
 
+        <!-- Nested: Trailer Registration (inside DOT) -->
+        <div class="nested-wrap">
+          <div class="nested-header" onclick="toggleNested('trailer')">
+            Trailer Registration <span id="chev-trailer" class="chev">▶</span>
+          </div>
+          <div id="panel-trailer" class="cards-grid hidden"></div>
+        </div>
+      </div>
+
+      <!-- OTHER -->
       <h2 class="accordion-header" onclick="toggleAccordion('other')">
         JRayl People Portal <span id="chev-other" class="chev">▶</span>
       </h2>
@@ -165,8 +194,8 @@
   </footer>
 
   <script>
-    // Include "updates" in accordion logic
-    const panels = ["updates", "employee", "dot", "maintenance", "other"];
+    // Top-level panels (Trailer is nested, so NOT listed here)
+    const panels = ["updates", "employee", "dot", "other"];
 
     function createCard(doc) {
       const card = document.createElement("div");
@@ -189,12 +218,26 @@
 
     function renderList(containerId, docs) {
       const container = document.getElementById(containerId);
+      if (!container) return;
       container.innerHTML = "";
       docs.forEach(doc => container.appendChild(createCard(doc)));
     }
 
     function closeAllExcept(openKey) {
       panels.forEach(key => {
+        if (key === "dot") {
+          const dotPanel = document.getElementById("panel-dot");
+          const dotChev = document.getElementById("chev-dot");
+          if (!dotPanel || !dotChev) return;
+          if (key !== openKey) {
+            dotPanel.classList.add("hidden");
+            dotChev.textContent = "▶";
+            // also close nested trailer when DOT closes
+            closeNestedTrailer();
+          }
+          return;
+        }
+
         const panel = document.getElementById("panel-" + key);
         const chev = document.getElementById("chev-" + key);
         if (!panel || !chev) return;
@@ -207,6 +250,26 @@
     }
 
     function toggleAccordion(key) {
+      // DOT uses special wrapper
+      if (key === "dot") {
+        const dotPanel = document.getElementById("panel-dot");
+        const dotChev = document.getElementById("chev-dot");
+        if (!dotPanel || !dotChev) return;
+
+        const isClosed = dotPanel.classList.contains("hidden");
+        closeAllExcept("dot");
+
+        if (isClosed) {
+          dotPanel.classList.remove("hidden");
+          dotChev.textContent = "▼";
+        } else {
+          dotPanel.classList.add("hidden");
+          dotChev.textContent = "▶";
+          closeNestedTrailer();
+        }
+        return;
+      }
+
       const panel = document.getElementById("panel-" + key);
       const chev = document.getElementById("chev-" + key);
       if (!panel || !chev) return;
@@ -225,6 +288,31 @@
       }
     }
 
+    // Nested trailer accordion (only lives inside DOT)
+    function closeNestedTrailer() {
+      const trailerPanel = document.getElementById("panel-trailer");
+      const trailerChev = document.getElementById("chev-trailer");
+      if (trailerPanel) trailerPanel.classList.add("hidden");
+      if (trailerChev) trailerChev.textContent = "▶";
+    }
+
+    function toggleNested(which) {
+      if (which !== "trailer") return;
+
+      const trailerPanel = document.getElementById("panel-trailer");
+      const trailerChev = document.getElementById("chev-trailer");
+      if (!trailerPanel || !trailerChev) return;
+
+      const isClosed = trailerPanel.classList.contains("hidden");
+      if (isClosed) {
+        trailerPanel.classList.remove("hidden");
+        trailerChev.textContent = "▼";
+      } else {
+        trailerPanel.classList.add("hidden");
+        trailerChev.textContent = "▶";
+      }
+    }
+
     async function loadDocs() {
       try {
         const res = await fetch("docs-manifest.json", { cache: "no-store" });
@@ -233,17 +321,25 @@
         // Pinned always visible
         renderList("pinnedList", docs.filter(d => d.pinned));
 
-        // Accordion panels
+        // Updates
         renderList("panel-updates", docs.filter(d => d.group === "updates"));
+
+        // Employee
         renderList("panel-employee", docs.filter(d => d.group === "employee"));
-        renderList("panel-dot", docs.filter(d => d.group === "dot"));
-        renderList("panel-maintenance", docs.filter(d => d.group === "maintenance"));
+
+        // DOT main docs (exclude trailer/maintenance docs)
+        renderList("dotDocs", docs.filter(d => d.group === "dot"));
+
+        // Trailer Registration docs come from "maintenance" group
+        renderList("panel-trailer", docs.filter(d => d.group === "maintenance"));
+
+        // Other
         renderList("panel-other", docs.filter(d => d.group === "other"));
 
       } catch (err) {
         console.error(err);
-        document.getElementById("panel-other").innerHTML =
-          "<p>Unable to load documents.</p>";
+        const other = document.getElementById("panel-other");
+        if (other) other.innerHTML = "<p>Unable to load documents.</p>";
       }
     }
 
@@ -252,8 +348,6 @@
 
 </body>
 </html>
-
-
 
 
 
