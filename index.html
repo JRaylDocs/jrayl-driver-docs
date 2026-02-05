@@ -28,7 +28,7 @@
       display: block;
     }
 
-    /* BIG MESSAGE BAR - placed under the hub subtitle */
+    /* BIG MESSAGE BAR - STRONGER BLACK OUTLINE */
     .site-message {
       display: inline-block;
       margin: 12px auto 0;
@@ -43,12 +43,19 @@
       letter-spacing: 0.2px;
 
       color: #ff0000;       /* red */
+
+      /* MUCH STRONGER BLACK OUTLINE */
       text-shadow:
-        -1px -1px 0 #000,
-         1px -1px 0 #000,
-        -1px  1px 0 #000,
-         1px  1px 0 #000,
-         0px  2px 0 #000;   /* extra punch */
+        -2px -2px 0 #000,
+         2px -2px 0 #000,
+        -2px  2px 0 #000,
+         2px  2px 0 #000,
+        -1px -2px 0 #000,
+         1px -2px 0 #000,
+        -1px  2px 0 #000,
+         1px  2px 0 #000,
+         0px  2px 0 #000;   /* bottom punch */
+
       max-width: 920px;
     }
 
@@ -136,7 +143,7 @@
     <h1>Driver Support Documents</h1>
     <p>Your quick-access resource hub</p>
 
-    <!-- EASY-TO-CHANGE MESSAGE (now under the hub subtitle) -->
+    <!-- EASY-TO-CHANGE MESSAGE -->
     <div class="site-message" id="siteMessage">
       Want to know more about our driver team program? Contact DET.
     </div>
@@ -145,9 +152,11 @@
   <main>
     <section class="docs-section">
 
-      <!-- PINNED DRIVER REFERENCE (always visible) -->
-      <h2>Driver Reference</h2>
-      <div id="pinnedList" class="cards-grid"></div>
+      <!-- DRIVER REFERENCE (NOW AN ACCORDION) -->
+      <h2 class="accordion-header" onclick="toggleAccordion('pinned')">
+        Driver Reference <span id="chev-pinned" class="chev">▶</span>
+      </h2>
+      <div id="panel-pinned" class="cards-grid hidden"></div>
 
       <!-- JRAYL UPDATES -->
       <h2 class="accordion-header" onclick="toggleAccordion('updates')">
@@ -161,17 +170,14 @@
       </h2>
       <div id="panel-employee" class="cards-grid hidden"></div>
 
-      <!-- DOT (NOW CONTAINS NESTED TRAILER REGISTRATION) -->
+      <!-- DOT (WITH NESTED TRAILER REGISTRATION) -->
       <h2 class="accordion-header" onclick="toggleAccordion('dot')">
         DOT Compliance <span id="chev-dot" class="chev">▶</span>
       </h2>
 
-      <!-- DOT PANEL WRAPPER -->
       <div id="panel-dot" class="hidden">
-        <!-- DOT docs list -->
         <div id="dotDocs" class="cards-grid"></div>
 
-        <!-- Nested: Trailer Registration (inside DOT) -->
         <div class="nested-wrap">
           <div class="nested-header" onclick="toggleNested('trailer')">
             Trailer Registration <span id="chev-trailer" class="chev">▶</span>
@@ -194,8 +200,8 @@
   </footer>
 
   <script>
-    // Top-level panels (Trailer is nested, so NOT listed here)
-    const panels = ["updates", "employee", "dot", "other"];
+    // Top-level panels (Driver Reference is now included)
+    const panels = ["pinned", "updates", "employee", "dot", "other"];
 
     function createCard(doc) {
       const card = document.createElement("div");
@@ -232,7 +238,6 @@
           if (key !== openKey) {
             dotPanel.classList.add("hidden");
             dotChev.textContent = "▶";
-            // also close nested trailer when DOT closes
             closeNestedTrailer();
           }
           return;
@@ -250,7 +255,6 @@
     }
 
     function toggleAccordion(key) {
-      // DOT uses special wrapper
       if (key === "dot") {
         const dotPanel = document.getElementById("panel-dot");
         const dotChev = document.getElementById("chev-dot");
@@ -275,8 +279,6 @@
       if (!panel || !chev) return;
 
       const isClosed = panel.classList.contains("hidden");
-
-      // Ensure only one open at a time
       closeAllExcept(key);
 
       if (isClosed) {
@@ -288,7 +290,6 @@
       }
     }
 
-    // Nested trailer accordion (only lives inside DOT)
     function closeNestedTrailer() {
       const trailerPanel = document.getElementById("panel-trailer");
       const trailerChev = document.getElementById("chev-trailer");
@@ -318,8 +319,8 @@
         const res = await fetch("docs-manifest.json", { cache: "no-store" });
         const docs = await res.json();
 
-        // Pinned always visible
-        renderList("pinnedList", docs.filter(d => d.pinned));
+        // Driver Reference (now accordion)
+        renderList("panel-pinned", docs.filter(d => d.pinned));
 
         // Updates
         renderList("panel-updates", docs.filter(d => d.group === "updates"));
@@ -327,10 +328,10 @@
         // Employee
         renderList("panel-employee", docs.filter(d => d.group === "employee"));
 
-        // DOT main docs (exclude trailer/maintenance docs)
+        // DOT main docs
         renderList("dotDocs", docs.filter(d => d.group === "dot"));
 
-        // Trailer Registration docs come from "maintenance" group
+        // Trailer Registration (maintenance docs)
         renderList("panel-trailer", docs.filter(d => d.group === "maintenance"));
 
         // Other
@@ -348,7 +349,6 @@
 
 </body>
 </html>
-
 
 
 
