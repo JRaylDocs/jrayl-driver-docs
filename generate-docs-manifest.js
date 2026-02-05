@@ -15,27 +15,45 @@ function titleFromFilename(file) {
 
 function groupFromFilename(fileLower) {
 
-  // 1) DRIVER PROGRAMS (top section)
-  if (fileLower.startsWith("team-")) return "team";
+  // DRIVER PROGRAMS (no strict prefix needed)
+  if (
+    fileLower.includes("team") ||
+    fileLower.includes("program")
+  ) {
+    return "team";
+  }
 
-  // 2) DRIVER REFERENCE
-  if (fileLower.startsWith("reference-")) return "reference";
+  // DRIVER REFERENCE
+  if (fileLower.includes("reference")) {
+    return "reference";
+  }
 
-  // 3) JRAYL UPDATES
-  if (fileLower.startsWith("updates-")) return "updates";
-  if (fileLower.startsWith("jrayl-update-")) return "updates";
+  // JRAYL UPDATES
+  if (fileLower.includes("update")) {
+    return "updates";
+  }
 
-  // 4) EMPLOYEE DOCS
-  if (fileLower.startsWith("employee-")) return "employee";
+  // EMPLOYEE DOCS
+  if (fileLower.includes("employee")) {
+    return "employee";
+  }
 
-  // 5) DOT COMPLIANCE (main)
-  if (fileLower.startsWith("dot-")) return "dot";
+  // DOT COMPLIANCE (main)
+  if (fileLower.includes("dot")) {
+    return "dot";
+  }
 
-  // 6) TRAILER REGISTRATION (nested under DOT)
-  if (fileLower.startsWith("maintenance-") || fileLower.startsWith("vehicle-"))
+  // TRAILER REGISTRATION (nested under DOT)
+  if (
+    fileLower.includes("maintenance") ||
+    fileLower.includes("vehicle") ||
+    fileLower.includes("trailer") ||
+    fileLower.includes("permit")
+  ) {
     return "maintenance";
+  }
 
-  // 7) EVERYTHING ELSE → PEOPLE PORTAL
+  // EVERYTHING ELSE → PEOPLE PORTAL
   return "other";
 }
 
@@ -59,7 +77,6 @@ const manifest = files
       group: groupFromFilename(lower)
     };
   })
-  // Sort: group first, then title
   .sort((a, b) => {
     if (a.group !== b.group) return a.group.localeCompare(b.group);
     return a.title.localeCompare(b.title);
@@ -67,4 +84,5 @@ const manifest = files
 
 fs.writeFileSync(OUT_FILE, JSON.stringify(manifest, null, 2));
 console.log(`Generated ${manifest.length} documents`);
+
 
