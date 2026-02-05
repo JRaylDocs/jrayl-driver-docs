@@ -139,13 +139,13 @@
   <main>
     <section class="docs-section">
 
-      <!-- NEW: DRIVER TEAM PROGRAM (TOP) -->
+      <!-- DRIVER PROGRAMS (display label only; still uses "team" internally) -->
       <h2 class="accordion-header" onclick="toggleAccordion('team')">
-        Driver Team Program <span id="chev-team" class="chev">▶</span>
+        Driver Programs <span id="chev-team" class="chev">▶</span>
       </h2>
       <div id="panel-team" class="cards-grid hidden"></div>
 
-      <!-- DRIVER REFERENCE (NO LONGER PINNED, JUST A NORMAL ACCORDION) -->
+      <!-- DRIVER REFERENCE (normal accordion, not pinned) -->
       <h2 class="accordion-header" onclick="toggleAccordion('reference')">
         Driver Reference <span id="chev-reference" class="chev">▶</span>
       </h2>
@@ -193,7 +193,7 @@
   </footer>
 
   <script>
-    // Top-level panels (pinned removed, new "team" added)
+    // Top-level panels
     const panels = ["team", "reference", "updates", "employee", "dot", "other"];
 
     function createCard(doc) {
@@ -312,10 +312,10 @@
         const res = await fetch("docs-manifest.json", { cache: "no-store" });
         const docs = await res.json();
 
-        // Driver Team Program (NEW) — looks for prefix: "team-"
+        // Driver Programs (files starting with team-)
         renderList("panel-team", docs.filter(d => d.group === "team"));
 
-        // Driver Reference (no longer pinned — uses group "reference")
+        // Driver Reference (files starting with reference-)
         renderList("panel-reference", docs.filter(d => d.group === "reference"));
 
         // Updates
@@ -345,6 +345,7 @@
 
 </body>
 </html>
+
 
 
 
