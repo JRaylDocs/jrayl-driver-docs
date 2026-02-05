@@ -109,6 +109,12 @@
       <h2>Driver Reference</h2>
       <div id="pinnedList" class="cards-grid"></div>
 
+      <!-- JRAYL UPDATES (NEW) -->
+      <h2 class="accordion-header" onclick="toggleAccordion('updates')">
+        JRayl Updates <span id="chev-updates" class="chev">▶</span>
+      </h2>
+      <div id="panel-updates" class="cards-grid hidden"></div>
+
       <!-- ACCORDION SECTIONS -->
       <h2 class="accordion-header" onclick="toggleAccordion('employee')">
         JRayl Employee Docs <span id="chev-employee" class="chev">▶</span>
@@ -138,7 +144,8 @@
   </footer>
 
   <script>
-    const panels = ["employee", "dot", "maintenance", "other"];
+    // Add "updates" so accordion logic knows about it
+    const panels = ["updates", "employee", "dot", "maintenance", "other"];
 
     function createCard(doc) {
       const card = document.createElement("div");
@@ -206,22 +213,12 @@
         renderList("pinnedList", docs.filter(d => d.pinned));
 
         // Accordion panels
+        renderList("panel-updates", docs.filter(d => d.group === "updates"));
         renderList("panel-employee", docs.filter(d => d.group === "employee"));
         renderList("panel-dot", docs.filter(d => d.group === "dot"));
         renderList("panel-maintenance", docs.filter(d => d.group === "maintenance"));
         renderList("panel-other", docs.filter(d => d.group === "other"));
 
-        // Optional: auto-open the first non-empty panel
-        // (uncomment if you want one panel open by default)
-        /*
-        const firstNonEmpty = [
-          ["employee", docs.some(d => d.group === "employee")],
-          ["dot", docs.some(d => d.group === "dot")],
-          ["maintenance", docs.some(d => d.group === "maintenance")],
-          ["other", docs.some(d => d.group === "other")]
-        ].find(x => x[1]);
-        if (firstNonEmpty) toggleAccordion(firstNonEmpty[0]);
-        */
       } catch (err) {
         console.error(err);
         document.getElementById("panel-other").innerHTML =
@@ -234,6 +231,8 @@
 
 </body>
 </html>
+
+
 
 
 
