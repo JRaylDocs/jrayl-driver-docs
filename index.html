@@ -28,7 +28,7 @@
       display: block;
     }
 
-    /* BIG MESSAGE BAR - STRONGER BLACK OUTLINE */
+    /* BIG MESSAGE BAR – SOLID BLACK TEXT */
     .site-message {
       display: inline-block;
       margin: 12px auto 0;
@@ -38,24 +38,11 @@
       border-radius: 14px;
 
       font-weight: 900;
-      font-size: 1.25rem;   /* bigger */
+      font-size: 1.25rem;
       line-height: 1.25;
       letter-spacing: 0.2px;
 
-      color: #ff0000;       /* red */
-
-      /* MUCH STRONGER BLACK OUTLINE */
-      text-shadow:
-        -2px -2px 0 #000,
-         2px -2px 0 #000,
-        -2px  2px 0 #000,
-         2px  2px 0 #000,
-        -1px -2px 0 #000,
-         1px -2px 0 #000,
-        -1px  2px 0 #000,
-         1px  2px 0 #000,
-         0px  2px 0 #000;   /* bottom punch */
-
+      color: #000000; /* SOLID BLACK */
       max-width: 920px;
     }
 
@@ -143,7 +130,7 @@
     <h1>Driver Support Documents</h1>
     <p>Your quick-access resource hub</p>
 
-    <!-- EASY-TO-CHANGE MESSAGE -->
+    <!-- EASY-TO-CHANGE MESSAGE (SOLID BLACK) -->
     <div class="site-message" id="siteMessage">
       Want to know more about our driver team program? Contact DET.
     </div>
@@ -152,11 +139,17 @@
   <main>
     <section class="docs-section">
 
-      <!-- DRIVER REFERENCE (NOW AN ACCORDION) -->
-      <h2 class="accordion-header" onclick="toggleAccordion('pinned')">
-        Driver Reference <span id="chev-pinned" class="chev">▶</span>
+      <!-- NEW: DRIVER TEAM PROGRAM (TOP) -->
+      <h2 class="accordion-header" onclick="toggleAccordion('team')">
+        Driver Team Program <span id="chev-team" class="chev">▶</span>
       </h2>
-      <div id="panel-pinned" class="cards-grid hidden"></div>
+      <div id="panel-team" class="cards-grid hidden"></div>
+
+      <!-- DRIVER REFERENCE (NO LONGER PINNED, JUST A NORMAL ACCORDION) -->
+      <h2 class="accordion-header" onclick="toggleAccordion('reference')">
+        Driver Reference <span id="chev-reference" class="chev">▶</span>
+      </h2>
+      <div id="panel-reference" class="cards-grid hidden"></div>
 
       <!-- JRAYL UPDATES -->
       <h2 class="accordion-header" onclick="toggleAccordion('updates')">
@@ -200,8 +193,8 @@
   </footer>
 
   <script>
-    // Top-level panels (Driver Reference is now included)
-    const panels = ["pinned", "updates", "employee", "dot", "other"];
+    // Top-level panels (pinned removed, new "team" added)
+    const panels = ["team", "reference", "updates", "employee", "dot", "other"];
 
     function createCard(doc) {
       const card = document.createElement("div");
@@ -319,8 +312,11 @@
         const res = await fetch("docs-manifest.json", { cache: "no-store" });
         const docs = await res.json();
 
-        // Driver Reference (now accordion)
-        renderList("panel-pinned", docs.filter(d => d.pinned));
+        // Driver Team Program (NEW) — looks for prefix: "team-"
+        renderList("panel-team", docs.filter(d => d.group === "team"));
+
+        // Driver Reference (no longer pinned — uses group "reference")
+        renderList("panel-reference", docs.filter(d => d.group === "reference"));
 
         // Updates
         renderList("panel-updates", docs.filter(d => d.group === "updates"));
@@ -349,6 +345,8 @@
 
 </body>
 </html>
+
+
 
 
 
