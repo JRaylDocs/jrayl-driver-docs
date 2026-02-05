@@ -14,10 +14,16 @@ function titleFromFilename(file) {
 }
 
 function groupFromFilename(fileLower) {
+  // NEW: Updates section (filename prefix rules)
+  if (fileLower.startsWith("updates-")) return "updates";
+  if (fileLower.startsWith("jrayl-update-")) return "updates";
+
+  // Existing groups
   if (fileLower.startsWith("employee-")) return "employee";
   if (fileLower.startsWith("dot-")) return "dot";
   if (fileLower.startsWith("maintenance-") || fileLower.startsWith("vehicle-"))
     return "maintenance";
+
   return "other";
 }
 
@@ -34,8 +40,8 @@ const manifest = files
     const ext = path.extname(file).toLowerCase();
     const lower = file.toLowerCase();
 
-    const pinned =
-      lower.startsWith("driver-reference.");
+    // Pinned always visible
+    const pinned = lower.startsWith("driver-reference.");
 
     return {
       title: titleFromFilename(file),
