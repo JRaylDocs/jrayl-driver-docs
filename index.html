@@ -252,9 +252,7 @@
     <img src="jrayl-logo.png" alt="JRayl Transport Logo" class="site-logo" />
     <h1>Driver Support Documents</h1>
     <p>Your quick-access resource hub</p>
-    <div class="site-message" id="siteMessage">
-      Want to know more about our driver team program? Contact DET.
-    </div>
+    <div class="site-message" id="siteMessage" style="display:none"></div>
   </header>
 
   <main>
@@ -507,6 +505,42 @@
       docs.forEach(doc => container.appendChild(createCard(doc)));
     }
 
+    // ─── Load message banner ─────────────────────────────────────────────────────
+    async function loadMessage() {
+      try {
+        const res  = await fetch("message.json", { cache: "no-store" });
+        const msg  = await res.json();
+        const el   = document.getElementById("siteMessage");
+        if (!el) return;
+
+        if (!msg.active) {
+          el.style.display = "none";
+          return;
+        }
+
+        el.textContent = msg.text;
+
+        // Style variants dispatch can set in message.json
+        const styles = {
+          default: { background: "#ffffff", border: "#000000", color: "#000000" },
+          urgent:  { background: "#fee2e2", border: "#dc2626", color: "#991b1b" },
+          info:    { background: "#eff6ff", border: "#2563eb", color: "#1e40af" },
+          success: { background: "#f0fdf4", border: "#16a34a", color: "#15803d" },
+        };
+
+        const s = styles[msg.style] || styles.default;
+        el.style.background   = s.background;
+        el.style.borderColor  = s.border;
+        el.style.color        = s.color;
+        el.style.display      = "inline-block";
+
+      } catch {
+        // message.json missing or invalid — just hide the banner
+        const el = document.getElementById("siteMessage");
+        if (el) el.style.display = "none";
+      }
+    }
+
     // ─── Load manifest ────────────────────────────────────────────────────────
     async function loadDocs() {
       try {
@@ -529,8 +563,8 @@
     }
 
     loadDocs();
+    loadMessage();
   </script>
 
 </body>
 </html>
-
