@@ -130,10 +130,6 @@
       border: none;
     }
 
-    .btn-view {
-      /* inherits colour from style.css like before */
-    }
-
     .btn-download {
       flex: 0 0 auto;
       background: transparent;
@@ -322,25 +318,30 @@
   <script>
     // ─── Config ───────────────────────────────────────────────────────────────
     const NEW_BADGE_DAYS = 7;
-
-    // Paste your Google Apps Script Web App URL here after setup
-    const ANALYTICS_URL = "https://script.google.com/macros/s/AKfycbwl7P0x1YGQJcYAJqGiC27Eh85N_ktJlVYQzgyj2470As1D_-IIqXN3IXVSUkm7YpzQ/exec";
+    const ANALYTICS_URL  = "https://script.google.com/macros/s/AKfycbwl7P0x1YGQJcYAJqGiC27Eh85N_ktJlVYQzgyj2470As1D_-IIqXN3IXVSUkm7YpzQ/exec";
 
     // ─── Analytics ────────────────────────────────────────────────────────────
     function trackOpen(title, group, href) {
-  if (!ANALYTICS_URL || ANALYTICS_URL === "YOUR_APPS_SCRIPT_URL_HERE") return;
-  if (!navigator.onLine) return;
+      if (!ANALYTICS_URL || ANALYTICS_URL === "YOUR_APPS_SCRIPT_URL_HERE") return;
+      if (!navigator.onLine) return;
 
-  const params = new URLSearchParams({
-    title,
-    group,
-    href,
-    timestamp: new Date().toISOString(),
-    userAgent: navigator.userAgent,
-  });
+      // Detect device type here so we don't send a huge userAgent string
+      const ua = navigator.userAgent.toLowerCase();
+      let device = "Desktop";
+      if (ua.includes("tablet") || ua.includes("ipad"))         device = "Tablet";
+      else if (ua.includes("mobile") || ua.includes("android")) device = "Mobile";
 
-  fetch(`${ANALYTICS_URL}?${params.toString()}`, { mode: "no-cors" });
-}
+      const params = new URLSearchParams({
+        title,
+        group,
+        href,
+        device,
+        timestamp: new Date().toISOString(),
+      });
+
+      fetch(`${ANALYTICS_URL}?${params.toString()}`, { mode: "no-cors" });
+    }
+
     // ─── Offline banner ───────────────────────────────────────────────────────
     function updateOnlineBanner() {
       document.getElementById("offlineBanner").style.display =
@@ -359,10 +360,10 @@
 
     // ─── PDF Modal ────────────────────────────────────────────────────────────
     function openModal(href, title, group) {
-      document.getElementById("modalTitle").textContent   = title;
-      document.getElementById("modalDownload").href       = href;
-      document.getElementById("modalDownload").download   = href.split("/").pop();
-      document.getElementById("pdfFrame").src             = href;
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalDownload").href     = href;
+      document.getElementById("modalDownload").download = href.split("/").pop();
+      document.getElementById("pdfFrame").src           = href;
       document.getElementById("pdfModal").classList.add("open");
       document.body.style.overflow = "hidden";
 
@@ -376,12 +377,10 @@
       document.body.style.overflow = "";
     }
 
-    // Close on backdrop click
     document.getElementById("pdfModal").addEventListener("click", e => {
       if (e.target === e.currentTarget) closeModal();
     });
 
-    // Close on Escape key
     document.addEventListener("keydown", e => {
       if (e.key === "Escape") closeModal();
     });
@@ -456,7 +455,6 @@
       const card = document.createElement("div");
       card.className = "doc-card";
 
-      // NEW badge
       if (isNew(doc.dateAdded)) {
         const badge = document.createElement("span");
         badge.className = "badge-new";
@@ -464,12 +462,10 @@
         card.appendChild(badge);
       }
 
-      // Title
       const title = document.createElement("h3");
       title.textContent = doc.title;
       card.appendChild(title);
 
-      // Last updated
       if (doc.dateModified) {
         const meta = document.createElement("p");
         meta.className = "doc-meta";
@@ -477,7 +473,6 @@
         card.appendChild(meta);
       }
 
-      // Buttons
       const actions = document.createElement("div");
       actions.className = "card-actions";
 
