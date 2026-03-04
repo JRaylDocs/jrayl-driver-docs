@@ -1,88 +1,85 @@
-const fs = require("fs");
+/**
+ * generate-manifest.js
+ * 
+ * Run this script any time you add or remove files from the docs/ subfolders.
+ * It will scan each folder and rebuild docs-manifest.json automatically.
+ * 
+ * Usage:
+ *   node generate-manifest.js
+ */
+
+const fs   = require("fs");
 const path = require("path");
 
-const DOCS_DIR = path.join(__dirname, "docs");
-const OUT_FILE = path.join(__dirname, "docs-manifest.json");
+// ─── Folder → group mapping ───────────────────────────────────────────────────
+// Key   = path relative to /docs
+// Value = group name used by the HTML (must match what's in index.html)
+const FOLDER_MAP = {
+  "team":                "team",
+  "reference":           "reference",
+  "updates":             "updates",
+  "employee":            "employee",
+  "dot":                 "dot",
+  "dot/maintenance":     "maintenance",   // nested under DOT → Trailer Registration
+  "other":               "other",
+};
 
-function titleFromFilename(file) {
-  return file
-    .replace(/\.[^/.]+$/, "")
-    .replace(/[-_]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, c => c.toUpperCase());
+const DOCS_DIR      = path.join(__dirname, "docs");
+const MANIFEST_PATH = path.join(__dirname, "docs-manifest.json");
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Turn a raw filename into a readable title.
+ *  e.g. "driver-handbook_2024.pdf" → "Driver Handbook 2024"
+ */
+function fileNameToTitle(filename) {
+  return filename
+    .replace(/\.[^.]+$/, "")           // strip extension
+    .replace(/[-_]+/g, " ")            // dashes/underscores → spaces
+    .replace(/\b\w/g, c => c.toUpperCase()); // title-case
 }
 
-function groupFromFilename(fileLower) {
-
-  // DRIVER PROGRAMS (no strict prefix needed)
-  if (
-    fileLower.includes("team") ||
-    fileLower.includes("program")
-  ) {
-    return "team";
-  }
-
-  // DRIVER REFERENCE
-  if (fileLower.includes("reference")) {
-    return "reference";
-  }
-
-  // JRAYL UPDATES
-  if (fileLower.includes("update")) {
-    return "updates";
-  }
-
-  // EMPLOYEE DOCS
-  if (fileLower.includes("employee")) {
-    return "employee";
-  }
-
-  // DOT COMPLIANCE (main)
-  if (fileLower.includes("dot")) {
-    return "dot";
-  }
-
-  // TRAILER REGISTRATION (nested under DOT)
-  if (
-    fileLower.includes("maintenance") ||
-    fileLower.includes("vehicle") ||
-    fileLower.includes("trailer") ||
-    fileLower.includes("permit")
-  ) {
-    return "maintenance";
-  }
-
-  // EVERYTHING ELSE → PEOPLE PORTAL
-  return "other";
+/** Detect type from extension */
+function detectType(filename) {
+  return /\.pdf$/i.test(filename) ? "pdf" : "doc";
 }
 
-const allowed = new Set([".pdf", ".png", ".jpg", ".jpeg", ".webp"]);
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
-const files = fs.existsSync(DOCS_DIR)
-  ? fs.readdirSync(DOCS_DIR).filter(f =>
-      allowed.has(path.extname(f).toLowerCase())
-    )
-  : [];
+const manifest = [];
 
-const manifest = files
-  .map(file => {
-    const ext = path.extname(file).toLowerCase();
-    const lower = file.toLowerCase();
+for (const [folder, group] of Object.entries(FOLDER_MAP)) {
+  const folderPath = path.join(DOCS_DIR, folder);
 
-    return {
-      title: titleFromFilename(file),
-      href: `docs/${encodeURIComponent(file)}`,
-      type: ext === ".pdf" ? "pdf" : "image",
-      group: groupFromFilename(lower)
-    };
-  })
-  .sort((a, b) => {
-    if (a.group !== b.group) return a.group.localeCompare(b.group);
-    return a.title.localeCompare(b.title);
+  // Create the folder if it doesn't exist yet
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath, { recursive: true });
+    console.log(`  📁 Created missing folder: docs/${folder}/`);
+    continue; // nothing to index yet
+  }
+
+  const files = fs.readdirSync(folderPath).filter(f => {
+    // Skip hidden files and directories
+    if (f.startsWith(".")) return false;
+    const stat = fs.statSync(path.join(folderPath, f));
+    return stat.isFile();
   });
 
-fs.writeFileSync(OUT_FILE, JSON.stringify(manifest, null, 2));
-console.log(`Generated ${manifest.length} documents`);
+  for (const file of files) {
+    manifest.push({
+      group,
+      title: fileNameToTitle(file),
+      href:  `docs/${folder}/${file}`,
+      type:  detectType(file),
+    });
+  }
+
+  console.log(`  ✅ ${group.padEnd(12)} → ${files.length} file(s)`);
+}
+
+fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
+console.log(`\n✨ docs-manifest.json written with ${manifest.length} total entries.\n`);
+
+
 
 
