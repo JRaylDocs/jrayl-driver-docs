@@ -444,11 +444,16 @@
       return diffDays <= NEW_BADGE_DAYS;
     }
 
-    function formatDate(isoDate) {
-      if (!isoDate) return null;
-      const [y, m, d] = isoDate.split("-");
+    function formatDate(isoString) {
+      if (!isoString) return null;
+      const d = new Date(isoString);
       const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      return `${months[parseInt(m, 10) - 1]} ${parseInt(d, 10)}, ${y}`;
+      const date = `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+      const hours   = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      const ampm    = hours >= 12 ? "PM" : "AM";
+      const h12     = hours % 12 || 12;
+      return `${date} ${h12}:${minutes} ${ampm}`;
     }
 
     function createCard(doc) {
@@ -528,5 +533,4 @@
 
 </body>
 </html>
-
 
