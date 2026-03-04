@@ -323,6 +323,27 @@
     // ─── Config ───────────────────────────────────────────────────────────────
     const NEW_BADGE_DAYS = 7;
 
+    // Paste your Google Apps Script Web App URL here after setup
+    const ANALYTICS_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+
+    // ─── Analytics ────────────────────────────────────────────────────────────
+    function trackOpen(title, group, href) {
+      if (!ANALYTICS_URL || ANALYTICS_URL === "YOUR_APPS_SCRIPT_URL_HERE") return;
+      if (!navigator.onLine) return; // skip silently when offline
+
+      const payload = {
+        title,
+        group,
+        href,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+      };
+
+      // sendBeacon fires in the background — never slows down the UI
+      const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+      navigator.sendBeacon(ANALYTICS_URL, blob);
+    }
+
     // ─── Offline banner ───────────────────────────────────────────────────────
     function updateOnlineBanner() {
       document.getElementById("offlineBanner").style.display =
@@ -340,13 +361,16 @@
     }
 
     // ─── PDF Modal ────────────────────────────────────────────────────────────
-    function openModal(href, title) {
+    function openModal(href, title, group) {
       document.getElementById("modalTitle").textContent   = title;
       document.getElementById("modalDownload").href       = href;
       document.getElementById("modalDownload").download   = href.split("/").pop();
       document.getElementById("pdfFrame").src             = href;
       document.getElementById("pdfModal").classList.add("open");
       document.body.style.overflow = "hidden";
+
+      // Fire analytics ping in the background
+      trackOpen(title, group, href);
     }
 
     function closeModal() {
@@ -463,7 +487,7 @@
       const viewBtn = document.createElement("button");
       viewBtn.className = "doc-btn btn-view";
       viewBtn.textContent = doc.type === "pdf" ? "View PDF" : "View Document";
-      viewBtn.addEventListener("click", () => openModal(doc.href, doc.title));
+      viewBtn.addEventListener("click", () => openModal(doc.href, doc.title, doc.group));
 
       const dlBtn = document.createElement("a");
       dlBtn.className = "doc-btn btn-download";
