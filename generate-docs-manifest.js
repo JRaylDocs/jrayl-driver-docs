@@ -15,7 +15,7 @@ const path = require("path");
 // Key   = path relative to /docs
 // Value = group name used by the HTML (must match what's in index.html)
 const FOLDER_MAP = {
-  "team":                "team",
+  "programs":            "programs",
   "reference":           "reference",
   "updates":             "updates",
   "employee":            "employee",
@@ -79,6 +79,7 @@ for (const [folder, group] of Object.entries(FOLDER_MAP)) {
 
 fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
 console.log(`\n✨ docs-manifest.json written with ${manifest.length} total entries.\n`);
+
 
 
 
