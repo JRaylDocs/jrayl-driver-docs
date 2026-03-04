@@ -139,13 +139,13 @@
   <main>
     <section class="docs-section">
 
-      <!-- DRIVER PROGRAMS (display label only; still uses "team" internally) -->
-      <h2 class="accordion-header" onclick="toggleAccordion('team')">
-        Driver Programs <span id="chev-team" class="chev">▶</span>
+      <!-- DRIVER PROGRAMS -->
+      <h2 class="accordion-header" onclick="toggleAccordion('programs')">
+        Driver Programs <span id="chev-programs" class="chev">▶</span>
       </h2>
-      <div id="panel-team" class="cards-grid hidden"></div>
+      <div id="panel-programs" class="cards-grid hidden"></div>
 
-      <!-- DRIVER REFERENCE (normal accordion, not pinned) -->
+      <!-- DRIVER REFERENCE -->
       <h2 class="accordion-header" onclick="toggleAccordion('reference')">
         Driver Reference <span id="chev-reference" class="chev">▶</span>
       </h2>
@@ -194,7 +194,7 @@
 
   <script>
     // Top-level panels
-    const panels = ["team", "reference", "updates", "employee", "dot", "other"];
+    const panels = ["programs", "reference", "updates", "employee", "dot", "other"];
 
     function createCard(doc) {
       const card = document.createElement("div");
@@ -312,10 +312,10 @@
         const res = await fetch("docs-manifest.json", { cache: "no-store" });
         const docs = await res.json();
 
-        // Driver Programs (files starting with team-)
-        renderList("panel-team", docs.filter(d => d.group === "team"));
+        // Driver Programs
+        renderList("panel-programs", docs.filter(d => d.group === "programs"));
 
-        // Driver Reference (files starting with reference-)
+        // Driver Reference
         renderList("panel-reference", docs.filter(d => d.group === "reference"));
 
         // Updates
@@ -345,14 +345,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
