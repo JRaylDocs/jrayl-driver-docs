@@ -390,7 +390,6 @@
       if (!ANALYTICS_URL || ANALYTICS_URL === "YOUR_APPS_SCRIPT_URL_HERE") return;
       if (!navigator.onLine) return;
 
-      // Detect device type here so we don't send a huge userAgent string
       const ua = navigator.userAgent.toLowerCase();
       let device = "Desktop";
       if (ua.includes("tablet") || ua.includes("ipad"))         device = "Tablet";
@@ -404,7 +403,9 @@
         timestamp: new Date().toISOString(),
       });
 
-      fetch(`${ANALYTICS_URL}?${params.toString()}`, { mode: "no-cors" });
+      // Use an image pixel — most reliable way to hit Google Apps Script
+      const img = new Image();
+      img.src = `${ANALYTICS_URL}?${params.toString()}`;
     }
 
     // ─── Offline banner ───────────────────────────────────────────────────────
@@ -635,4 +636,5 @@
 
 </body>
 </html>
+
 
