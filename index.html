@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JRayl Driver Support Documents</title>
 
+  <!-- PWA -->
+  <link rel="manifest" href="site.webmanifest" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="JRayl Docs" />
+
   <link rel="stylesheet" href="style.css" />
 
   <style>
@@ -28,7 +35,6 @@
       display: block;
     }
 
-    /* BIG MESSAGE BAR – SOLID BLACK TEXT */
     .site-message {
       display: inline-block;
       margin: 12px auto 0;
@@ -36,14 +42,23 @@
       background: #ffffff;
       border: 3px solid #000;
       border-radius: 14px;
-
       font-weight: 900;
       font-size: 1.25rem;
       line-height: 1.25;
       letter-spacing: 0.2px;
-
-      color: #000000; /* SOLID BLACK */
+      color: #000000;
       max-width: 920px;
+    }
+
+    /* ── Offline banner ── */
+    #offlineBanner {
+      display: none;
+      background: #f59e0b;
+      color: #000;
+      text-align: center;
+      font-weight: 700;
+      padding: 10px 16px;
+      font-size: 0.95rem;
     }
 
     .cards-grid {
@@ -61,13 +76,37 @@
       border-radius: 12px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 6px;
+      position: relative;
     }
 
     .doc-card h3 {
       margin: 0;
       font-size: 1.05rem;
       line-height: 1.25;
+      padding-right: 52px; /* room for NEW badge */
+    }
+
+    /* ── NEW badge ── */
+    .badge-new {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: #dc2626;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 3px 7px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    /* ── Last updated timestamp ── */
+    .doc-meta {
+      font-size: 0.78rem;
+      color: #6b7280;
+      margin: 0;
     }
 
     .doc-btn {
@@ -78,6 +117,7 @@
       border-radius: 12px;
       font-weight: 600;
       text-decoration: none;
+      margin-top: 4px;
     }
 
     /* Accordion headers */
@@ -125,12 +165,16 @@
 
 <body>
 
+  <!-- Offline banner — shown automatically when connection is lost -->
+  <div id="offlineBanner">
+    ⚠️ You are offline — documents already opened are still available
+  </div>
+
   <header class="site-header">
     <img src="jrayl-logo.png" alt="JRayl Transport Logo" class="site-logo" />
     <h1>Driver Support Documents</h1>
     <p>Your quick-access resource hub</p>
 
-    <!-- EASY-TO-CHANGE MESSAGE (SOLID BLACK) -->
     <div class="site-message" id="siteMessage">
       Want to know more about our driver team program? Contact DET.
     </div>
@@ -167,10 +211,8 @@
       <h2 class="accordion-header" onclick="toggleAccordion('dot')">
         DOT Compliance <span id="chev-dot" class="chev">▶</span>
       </h2>
-
       <div id="panel-dot" class="hidden">
         <div id="dotDocs" class="cards-grid"></div>
-
         <div class="nested-wrap">
           <div class="nested-header" onclick="toggleNested('trailer')">
             Trailer Registration <span id="chev-trailer" class="chev">▶</span>
@@ -193,25 +235,127 @@
   </footer>
 
   <script>
-    // Top-level panels
+    // ─── Config ───────────────────────────────────────────────────────────────
+    const NEW_BADGE_DAYS = 7; // how many days a doc shows the NEW badge
+
+    // ─── Offline banner ───────────────────────────────────────────────────────
+    function updateOnlineBanner() {
+      document.getElementById("offlineBanner").style.display =
+        navigator.onLine ? "none" : "block";
+    }
+    window.addEventListener("online",  updateOnlineBanner);
+    window.addEventListener("offline", updateOnlineBanner);
+    updateOnlineBanner();
+
+    // ─── PWA Service Worker ───────────────────────────────────────────────────
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js").catch(err =>
+        console.warn("SW registration failed:", err)
+      );
+    }
+
+    // ─── Accordion ────────────────────────────────────────────────────────────
     const panels = ["programs", "reference", "updates", "employee", "dot", "other"];
+
+    function closeAllExcept(openKey) {
+      panels.forEach(key => {
+        if (key === "dot") {
+          const p = document.getElementById("panel-dot");
+          const c = document.getElementById("chev-dot");
+          if (key !== openKey) { p.classList.add("hidden"); c.textContent = "▶"; closeNestedTrailer(); }
+          return;
+        }
+        const p = document.getElementById("panel-" + key);
+        const c = document.getElementById("chev-" + key);
+        if (key !== openKey) { p.classList.add("hidden"); c.textContent = "▶"; }
+      });
+    }
+
+    function toggleAccordion(key) {
+      if (key === "dot") {
+        const p = document.getElementById("panel-dot");
+        const c = document.getElementById("chev-dot");
+        const closed = p.classList.contains("hidden");
+        closeAllExcept("dot");
+        if (closed) { p.classList.remove("hidden"); c.textContent = "▼"; }
+        else { p.classList.add("hidden"); c.textContent = "▶"; closeNestedTrailer(); }
+        return;
+      }
+      const p = document.getElementById("panel-" + key);
+      const c = document.getElementById("chev-" + key);
+      const closed = p.classList.contains("hidden");
+      closeAllExcept(key);
+      if (closed) { p.classList.remove("hidden"); c.textContent = "▼"; }
+      else { p.classList.add("hidden"); c.textContent = "▶"; }
+    }
+
+    function closeNestedTrailer() {
+      const p = document.getElementById("panel-trailer");
+      const c = document.getElementById("chev-trailer");
+      if (p) p.classList.add("hidden");
+      if (c) c.textContent = "▶";
+    }
+
+    function toggleNested(which) {
+      if (which !== "trailer") return;
+      const p = document.getElementById("panel-trailer");
+      const c = document.getElementById("chev-trailer");
+      const closed = p.classList.contains("hidden");
+      if (closed) { p.classList.remove("hidden"); c.textContent = "▼"; }
+      else { p.classList.add("hidden"); c.textContent = "▶"; }
+    }
+
+    // ─── Card builder ─────────────────────────────────────────────────────────
+
+    function isNew(dateAdded) {
+      if (!dateAdded) return false;
+      const added = new Date(dateAdded);
+      const now   = new Date();
+      const diffDays = (now - added) / (1000 * 60 * 60 * 24);
+      return diffDays <= NEW_BADGE_DAYS;
+    }
+
+    function formatDate(isoDate) {
+      if (!isoDate) return null;
+      const [y, m, d] = isoDate.split("-");
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      return `${months[parseInt(m, 10) - 1]} ${parseInt(d, 10)}, ${y}`;
+    }
 
     function createCard(doc) {
       const card = document.createElement("div");
       card.className = "doc-card";
 
+      // NEW badge
+      if (isNew(doc.dateAdded)) {
+        const badge = document.createElement("span");
+        badge.className = "badge-new";
+        badge.textContent = "New";
+        card.appendChild(badge);
+      }
+
+      // Title
       const title = document.createElement("h3");
       title.textContent = doc.title;
+      card.appendChild(title);
 
+      // Last updated
+      if (doc.dateModified) {
+        const meta = document.createElement("p");
+        meta.className = "doc-meta";
+        meta.textContent = `Updated ${formatDate(doc.dateModified)}`;
+        card.appendChild(meta);
+      }
+
+      // Button
       const btn = document.createElement("a");
       btn.className = "doc-btn";
       btn.href = doc.href;
       btn.target = "_blank";
       btn.rel = "noopener";
       btn.textContent = doc.type === "pdf" ? "Open PDF" : "Open Document";
-
-      card.appendChild(title);
       card.appendChild(btn);
+
       return card;
     }
 
@@ -222,116 +366,19 @@
       docs.forEach(doc => container.appendChild(createCard(doc)));
     }
 
-    function closeAllExcept(openKey) {
-      panels.forEach(key => {
-        if (key === "dot") {
-          const dotPanel = document.getElementById("panel-dot");
-          const dotChev = document.getElementById("chev-dot");
-          if (!dotPanel || !dotChev) return;
-          if (key !== openKey) {
-            dotPanel.classList.add("hidden");
-            dotChev.textContent = "▶";
-            closeNestedTrailer();
-          }
-          return;
-        }
-
-        const panel = document.getElementById("panel-" + key);
-        const chev = document.getElementById("chev-" + key);
-        if (!panel || !chev) return;
-
-        if (key !== openKey) {
-          panel.classList.add("hidden");
-          chev.textContent = "▶";
-        }
-      });
-    }
-
-    function toggleAccordion(key) {
-      if (key === "dot") {
-        const dotPanel = document.getElementById("panel-dot");
-        const dotChev = document.getElementById("chev-dot");
-        if (!dotPanel || !dotChev) return;
-
-        const isClosed = dotPanel.classList.contains("hidden");
-        closeAllExcept("dot");
-
-        if (isClosed) {
-          dotPanel.classList.remove("hidden");
-          dotChev.textContent = "▼";
-        } else {
-          dotPanel.classList.add("hidden");
-          dotChev.textContent = "▶";
-          closeNestedTrailer();
-        }
-        return;
-      }
-
-      const panel = document.getElementById("panel-" + key);
-      const chev = document.getElementById("chev-" + key);
-      if (!panel || !chev) return;
-
-      const isClosed = panel.classList.contains("hidden");
-      closeAllExcept(key);
-
-      if (isClosed) {
-        panel.classList.remove("hidden");
-        chev.textContent = "▼";
-      } else {
-        panel.classList.add("hidden");
-        chev.textContent = "▶";
-      }
-    }
-
-    function closeNestedTrailer() {
-      const trailerPanel = document.getElementById("panel-trailer");
-      const trailerChev = document.getElementById("chev-trailer");
-      if (trailerPanel) trailerPanel.classList.add("hidden");
-      if (trailerChev) trailerChev.textContent = "▶";
-    }
-
-    function toggleNested(which) {
-      if (which !== "trailer") return;
-
-      const trailerPanel = document.getElementById("panel-trailer");
-      const trailerChev = document.getElementById("chev-trailer");
-      if (!trailerPanel || !trailerChev) return;
-
-      const isClosed = trailerPanel.classList.contains("hidden");
-      if (isClosed) {
-        trailerPanel.classList.remove("hidden");
-        trailerChev.textContent = "▼";
-      } else {
-        trailerPanel.classList.add("hidden");
-        trailerChev.textContent = "▶";
-      }
-    }
-
+    // ─── Load manifest ────────────────────────────────────────────────────────
     async function loadDocs() {
       try {
-        const res = await fetch("docs-manifest.json", { cache: "no-store" });
+        const res  = await fetch("docs-manifest.json", { cache: "no-store" });
         const docs = await res.json();
 
-        // Driver Programs
-        renderList("panel-programs", docs.filter(d => d.group === "programs"));
-
-        // Driver Reference
+        renderList("panel-programs",  docs.filter(d => d.group === "programs"));
         renderList("panel-reference", docs.filter(d => d.group === "reference"));
-
-        // Updates
-        renderList("panel-updates", docs.filter(d => d.group === "updates"));
-
-        // Employee
-        renderList("panel-employee", docs.filter(d => d.group === "employee"));
-
-        // DOT main docs
-        renderList("dotDocs", docs.filter(d => d.group === "dot"));
-
-        // Trailer Registration (maintenance docs)
-        renderList("panel-trailer", docs.filter(d => d.group === "maintenance"));
-
-        // Other
-        renderList("panel-other", docs.filter(d => d.group === "other"));
+        renderList("panel-updates",   docs.filter(d => d.group === "updates"));
+        renderList("panel-employee",  docs.filter(d => d.group === "employee"));
+        renderList("dotDocs",         docs.filter(d => d.group === "dot"));
+        renderList("panel-trailer",   docs.filter(d => d.group === "maintenance"));
+        renderList("panel-other",     docs.filter(d => d.group === "other"));
 
       } catch (err) {
         console.error(err);
