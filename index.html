@@ -84,7 +84,7 @@
       margin: 0;
       font-size: 1.05rem;
       line-height: 1.25;
-      padding-right: 52px; /* room for NEW badge */
+      padding-right: 52px;
     }
 
     /* ── NEW badge ── */
@@ -102,22 +102,105 @@
       text-transform: uppercase;
     }
 
-    /* ── Last updated timestamp ── */
+    /* ── Timestamp ── */
     .doc-meta {
       font-size: 0.78rem;
       color: #6b7280;
       margin: 0;
     }
 
+    /* ── Card buttons row ── */
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
     .doc-btn {
+      flex: 1;
       display: inline-flex;
       justify-content: center;
       align-items: center;
-      padding: 14px 16px;
+      padding: 12px 10px;
       border-radius: 12px;
       font-weight: 600;
       text-decoration: none;
-      margin-top: 4px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-view {
+      /* inherits colour from style.css like before */
+    }
+
+    .btn-download {
+      flex: 0 0 auto;
+      background: transparent;
+      border: 2px solid currentColor !important;
+      opacity: 0.7;
+      font-size: 1.1rem;
+      padding: 10px 14px;
+    }
+
+    /* ── PDF Viewer Modal ── */
+    #pdfModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0,0,0,0.82);
+      flex-direction: column;
+    }
+
+    #pdfModal.open {
+      display: flex;
+    }
+
+    .modal-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: #111;
+      color: #fff;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .modal-title {
+      font-weight: 700;
+      font-size: 1rem;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .modal-toolbar a,
+    .modal-toolbar button {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .modal-close {
+      background: #dc2626 !important;
+      color: #fff !important;
+    }
+
+    #pdfFrame {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background: #525659;
     }
 
     /* Accordion headers */
@@ -136,7 +219,6 @@
       font-weight: 700;
     }
 
-    /* Nested accordion (inside DOT) */
     .nested-wrap {
       margin-top: 10px;
       padding-left: 10px;
@@ -165,16 +247,15 @@
 
 <body>
 
-  <!-- Offline banner — shown automatically when connection is lost -->
+  <!-- Offline banner -->
   <div id="offlineBanner">
-    ⚠️ You are offline — documents already opened are still available
+    ⚠️ You are offline — all downloaded documents are still available
   </div>
 
   <header class="site-header">
     <img src="jrayl-logo.png" alt="JRayl Transport Logo" class="site-logo" />
     <h1>Driver Support Documents</h1>
     <p>Your quick-access resource hub</p>
-
     <div class="site-message" id="siteMessage">
       Want to know more about our driver team program? Contact DET.
     </div>
@@ -183,31 +264,26 @@
   <main>
     <section class="docs-section">
 
-      <!-- DRIVER PROGRAMS -->
       <h2 class="accordion-header" onclick="toggleAccordion('programs')">
         Driver Programs <span id="chev-programs" class="chev">▶</span>
       </h2>
       <div id="panel-programs" class="cards-grid hidden"></div>
 
-      <!-- DRIVER REFERENCE -->
       <h2 class="accordion-header" onclick="toggleAccordion('reference')">
         Driver Reference <span id="chev-reference" class="chev">▶</span>
       </h2>
       <div id="panel-reference" class="cards-grid hidden"></div>
 
-      <!-- JRAYL UPDATES -->
       <h2 class="accordion-header" onclick="toggleAccordion('updates')">
         JRayl Updates <span id="chev-updates" class="chev">▶</span>
       </h2>
       <div id="panel-updates" class="cards-grid hidden"></div>
 
-      <!-- EMPLOYEE -->
       <h2 class="accordion-header" onclick="toggleAccordion('employee')">
         JRayl Employee Docs <span id="chev-employee" class="chev">▶</span>
       </h2>
       <div id="panel-employee" class="cards-grid hidden"></div>
 
-      <!-- DOT (WITH NESTED TRAILER REGISTRATION) -->
       <h2 class="accordion-header" onclick="toggleAccordion('dot')">
         DOT Compliance <span id="chev-dot" class="chev">▶</span>
       </h2>
@@ -221,7 +297,6 @@
         </div>
       </div>
 
-      <!-- OTHER -->
       <h2 class="accordion-header" onclick="toggleAccordion('other')">
         JRayl People Portal <span id="chev-other" class="chev">▶</span>
       </h2>
@@ -234,9 +309,19 @@
     <p>© JRayl Transport – Driver Resource Portal</p>
   </footer>
 
+  <!-- ── PDF Viewer Modal ─────────────────────────────────────────────────── -->
+  <div id="pdfModal" role="dialog" aria-modal="true" aria-label="Document viewer">
+    <div class="modal-toolbar">
+      <span class="modal-title" id="modalTitle"></span>
+      <a id="modalDownload" href="#" download>⬇ Download</a>
+      <button class="modal-close" onclick="closeModal()">✕ Close</button>
+    </div>
+    <iframe id="pdfFrame" title="Document viewer"></iframe>
+  </div>
+
   <script>
     // ─── Config ───────────────────────────────────────────────────────────────
-    const NEW_BADGE_DAYS = 7; // how many days a doc shows the NEW badge
+    const NEW_BADGE_DAYS = 7;
 
     // ─── Offline banner ───────────────────────────────────────────────────────
     function updateOnlineBanner() {
@@ -253,6 +338,32 @@
         console.warn("SW registration failed:", err)
       );
     }
+
+    // ─── PDF Modal ────────────────────────────────────────────────────────────
+    function openModal(href, title) {
+      document.getElementById("modalTitle").textContent   = title;
+      document.getElementById("modalDownload").href       = href;
+      document.getElementById("modalDownload").download   = href.split("/").pop();
+      document.getElementById("pdfFrame").src             = href;
+      document.getElementById("pdfModal").classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeModal() {
+      document.getElementById("pdfModal").classList.remove("open");
+      document.getElementById("pdfFrame").src = "";
+      document.body.style.overflow = "";
+    }
+
+    // Close on backdrop click
+    document.getElementById("pdfModal").addEventListener("click", e => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+
+    // Close on Escape key
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeModal();
+    });
 
     // ─── Accordion ────────────────────────────────────────────────────────────
     const panels = ["programs", "reference", "updates", "employee", "dot", "other"];
@@ -309,9 +420,7 @@
 
     function isNew(dateAdded) {
       if (!dateAdded) return false;
-      const added = new Date(dateAdded);
-      const now   = new Date();
-      const diffDays = (now - added) / (1000 * 60 * 60 * 24);
+      const diffDays = (new Date() - new Date(dateAdded)) / (1000 * 60 * 60 * 24);
       return diffDays <= NEW_BADGE_DAYS;
     }
 
@@ -347,14 +456,25 @@
         card.appendChild(meta);
       }
 
-      // Button
-      const btn = document.createElement("a");
-      btn.className = "doc-btn";
-      btn.href = doc.href;
-      btn.target = "_blank";
-      btn.rel = "noopener";
-      btn.textContent = doc.type === "pdf" ? "Open PDF" : "Open Document";
-      card.appendChild(btn);
+      // Buttons
+      const actions = document.createElement("div");
+      actions.className = "card-actions";
+
+      const viewBtn = document.createElement("button");
+      viewBtn.className = "doc-btn btn-view";
+      viewBtn.textContent = doc.type === "pdf" ? "View PDF" : "View Document";
+      viewBtn.addEventListener("click", () => openModal(doc.href, doc.title));
+
+      const dlBtn = document.createElement("a");
+      dlBtn.className = "doc-btn btn-download";
+      dlBtn.href = doc.href;
+      dlBtn.download = doc.href.split("/").pop();
+      dlBtn.title = "Download";
+      dlBtn.textContent = "⬇";
+
+      actions.appendChild(viewBtn);
+      actions.appendChild(dlBtn);
+      card.appendChild(actions);
 
       return card;
     }
