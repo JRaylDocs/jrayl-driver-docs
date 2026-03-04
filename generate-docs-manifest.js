@@ -54,7 +54,7 @@ function detectType(filename) {
 }
 
 function toISODate(date) {
-  return date.toISOString().split("T")[0]; // "YYYY-MM-DD"
+  return date.toISOString().split("T")[0]; // "YYYY-MM-DD" — used for dateAdded only
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ for (const [folder, group] of Object.entries(FOLDER_MAP)) {
   for (const file of files) {
     const href         = `docs/${folder}/${file}`;
     const stat         = fs.statSync(path.join(DOCS_DIR, folder, file));
-    const dateModified = toISODate(stat.mtime);
+    const dateModified = stat.mtime.toISOString(); // full timestamp e.g. 2026-03-04T10:30:00.000Z
 
     // Only assign dateAdded once — never overwrite an existing value
     if (!storedDates[href]) {
@@ -110,5 +110,6 @@ fs.writeFileSync(DATES_STORE, JSON.stringify(storedDates, null, 2));
 fs.writeFileSync(MANIFEST,    JSON.stringify(manifest,    null, 2));
 console.log(`\n✨ docs-manifest.json written with ${manifest.length} total entries.`);
 console.log(`📅 docs-dates.json updated.\n`);
+
 
 
