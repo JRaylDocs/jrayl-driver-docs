@@ -16,7 +16,7 @@ function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
 
-    const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById("YOUR_SHEET_ID_HERE");
     const sheet = getOrCreateSheet(ss, "Doc Opens");
 
     // Write the row
