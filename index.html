@@ -328,22 +328,19 @@
 
     // ─── Analytics ────────────────────────────────────────────────────────────
     function trackOpen(title, group, href) {
-      if (!ANALYTICS_URL || ANALYTICS_URL === "YOUR_APPS_SCRIPT_URL_HERE") return;
-      if (!navigator.onLine) return; // skip silently when offline
+  if (!ANALYTICS_URL || ANALYTICS_URL === "YOUR_APPS_SCRIPT_URL_HERE") return;
+  if (!navigator.onLine) return;
 
-      const payload = {
-        title,
-        group,
-        href,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-      };
+  const params = new URLSearchParams({
+    title,
+    group,
+    href,
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+  });
 
-      // sendBeacon fires in the background — never slows down the UI
-      const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
-      navigator.sendBeacon(ANALYTICS_URL, blob);
-    }
-
+  fetch(`${ANALYTICS_URL}?${params.toString()}`, { mode: "no-cors" });
+}
     // ─── Offline banner ───────────────────────────────────────────────────────
     function updateOnlineBanner() {
       document.getElementById("offlineBanner").style.display =
@@ -536,4 +533,5 @@
 
 </body>
 </html>
+
 
