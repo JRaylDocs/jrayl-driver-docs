@@ -6,14 +6,18 @@
  *  - docs-manifest.json                    → Network First (always try fresh)
  *  - Individual doc files (PDF / docx)     → Cache First, falling back to network
  *
- * To force drivers to get a full refresh, bump CACHE_VERSION below.
+ * Background pre-caching:
+ *  On install the SW fetches docs-manifest.json and pre-caches every
+ *  document listed in it — drivers don't need to open each file first.
+ *
+ * To force a full refresh on all tablets, bump CACHE_VERSION.
  */
 
 const CACHE_VERSION = "jrayl-v1";
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_DOCS    = `${CACHE_VERSION}-docs`;
 
-// Files that make up the app shell — cached on install
+// App shell — cached immediately on install
 const SHELL_FILES = [
   "./",
   "./index.html",
@@ -23,10 +27,35 @@ const SHELL_FILES = [
   "./docs-manifest.json",
 ];
 
-// ─── Install: pre-cache the app shell ────────────────────────────────────────
+// ─── Install ──────────────────────────────────────────────────────────────────
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_STATIC).then(cache => cache.addAll(SHELL_FILES))
+    (async () => {
+      // 1. Cache the app shell
+      const staticCache = await caches.open(CACHE_STATIC);
+      await staticCache.addAll(SHELL_FILES);
+
+      // 2. Fetch the manifest and pre-cache every doc in the background
+      try {
+        const res  = await fetch("./docs-manifest.json", { cache: "no-store" });
+        const docs = await res.json();
+        const docCache = await caches.open(CACHE_DOCS);
+
+        // Cache each file individually — if one fails, keep going
+        await Promise.allSettled(
+          docs.map(async doc => {
+            try {
+              const docRes = await fetch(doc.href);
+              if (docRes.ok) await docCache.put(doc.href, docRes);
+            } catch {
+              // File unavailable — skip silently
+            }
+          })
+        );
+      } catch {
+        // Manifest unavailable — shell-only cache is fine
+      }
+    })()
   );
   self.skipWaiting();
 });
@@ -50,19 +79,19 @@ self.addEventListener("fetch", event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // 1. docs-manifest.json → Network First so new docs always show up
+  // docs-manifest.json → Network First so new docs always appear
   if (url.pathname.endsWith("docs-manifest.json")) {
     event.respondWith(networkFirstThenCache(request, CACHE_STATIC));
     return;
   }
 
-  // 2. Doc files (PDFs / docx inside /docs/) → Cache First
+  // Doc files → Cache First (pre-cached on install)
   if (url.pathname.includes("/docs/")) {
     event.respondWith(cacheFirstThenNetwork(request, CACHE_DOCS));
     return;
   }
 
-  // 3. Everything else (shell) → Cache First
+  // Everything else (shell) → Cache First
   event.respondWith(cacheFirstThenNetwork(request, CACHE_STATIC));
 });
 
@@ -85,7 +114,6 @@ async function networkFirstThenCache(request, cacheName) {
 async function cacheFirstThenNetwork(request, cacheName) {
   const cached = await caches.match(request);
   if (cached) return cached;
-
   try {
     const response = await fetch(request);
     if (response.ok) {
