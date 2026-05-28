@@ -388,19 +388,11 @@
     </div>
   </div>
 
-  <!-- PDF.js library hosted locally (same origin — works in AirDroid lockdown) -->
-  <script src="pdfjs/pdf.min.js"></script>
-
   <script>
     // ─── Config ───────────────────────────────────────────────────────────────
     const NEW_BADGE_DAYS = 7;
     const ANALYTICS_URL  = "https://script.google.com/macros/s/AKfycbzZfL1YUQQAD1YrpIAYStoEUNNyDOfAusULO2yJyPElDS8mdBlaHwvMDBUzdf7-Fy3e/exec";
     const SW_CACHE_NAME  = "jrayl-v1";
-
-    // ─── PDF.js worker (local, same origin) ─────────────────────────────────────
-    if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "pdfjs/pdf.worker.min.js";
-    }
 
     // ─── Analytics ────────────────────────────────────────────────────────────
     function trackOpen(title, group, href) {
@@ -431,8 +423,25 @@
       );
     }
 
-    // ─── PDF Modal (PDF.js renderer) ────────────────────────────────────────────
-    function openModal(href, title, group) {
+    // ─── Document Viewer (PNG previews — works in AirDroid lockdown) ─────────────
+    // AirDroid intercepts PDFs and forces a download, but shows PNG images inline.
+    // So PDFs are displayed using pre-generated PNG previews (see generate-previews.mjs).
+    // docs-previews.json maps each PDF's href to its list of preview image paths.
+    let previewMap = null;
+
+    async function loadPreviewMap() {
+      if (previewMap) return previewMap;
+      try {
+        const res = await fetch("docs-previews.json");
+        previewMap = res.ok ? await res.json() : {};
+      } catch {
+        previewMap = {};
+      }
+      return previewMap;
+    }
+    loadPreviewMap(); // warm it up on page load
+
+    async function openModal(href, title, group) {
       trackOpen(title, group, href);
 
       document.getElementById("modalTitle").textContent = title;
@@ -448,83 +457,30 @@
       loading.textContent = "Loading document…";
       loading.style.display = "block";
 
-      // Guard: if PDF.js library failed to load, tell the user
-      if (!window.pdfjsLib) {
-        loading.textContent = "⚠️ Viewer unavailable. Use the Download button above.";
+      const map   = await loadPreviewMap();
+      const pages = map[href];
+
+      // If we have PNG previews for this PDF, show those (works in AirDroid)
+      if (pages && pages.length) {
+        loading.style.display = "none";
+        pages.forEach(src => {
+          const img = document.createElement("img");
+          img.src = src;
+          img.alt = title;
+          img.loading = "lazy";
+          img.style.cssText =
+            "display:block;width:100%;max-width:960px;height:auto;" +
+            "box-shadow:0 2px 12px rgba(0,0,0,0.4);border-radius:4px;background:#fff;";
+          viewer.appendChild(img);
+        });
         return;
       }
 
-      // Safety timeout — if rendering hasn't finished in 30s, stop waiting
-      let finished = false;
-      const timeout = setTimeout(() => {
-        if (!finished) {
-          loading.style.display = "block";
-          loading.textContent = "⚠️ Taking too long to load. Use the Download button above.";
-        }
-      }, 30000);
-
-      // ── PATH B ──────────────────────────────────────────────────────────────
-      // Instead of handing the .pdf URL to PDF.js (which AirDroid intercepts and
-      // turns into a download prompt), we fetch the raw bytes ourselves in the
-      // background as an ArrayBuffer, then feed those bytes directly to PDF.js.
-      // Background data fetches usually slip past the download interceptor.
-      // On-screen status text shows exactly where it gets to, since we can't
-      // see the tablet's console.
-      requestAnimationFrame(async () => {
-        try {
-          loading.textContent = "Fetching document…";
-          const res = await fetch(href, { headers: { "Accept": "application/pdf" } });
-          if (!res.ok) throw new Error("HTTP " + res.status);
-
-          loading.textContent = "Reading document…";
-          const bytes = await res.arrayBuffer();
-
-          loading.textContent = "Rendering… (" + Math.round(bytes.byteLength / 1024) + " KB)";
-          const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
-
-          finished = true;
-          clearTimeout(timeout);
-          loading.style.display = "none";
-
-          const renders = [];
-          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            renders.push(renderPage(pdf, pageNum, viewer));
-          }
-          await Promise.all(renders);
-        } catch (err) {
-          finished = true;
-          clearTimeout(timeout);
-          console.error("PDF load error:", err);
-          loading.style.display = "block";
-          loading.textContent = "⚠️ " + (err && err.message ? err.message : "Could not load") +
-            " — use the Download button above.";
-        }
-      });
-    }
-
-    function renderPage(pdf, pageNum, container) {
-      return pdf.getPage(pageNum).then(page => {
-        // Base the width on the window, NOT container.clientWidth — clientWidth
-        // can return 0 right after the modal opens (before layout flushes),
-        // which produced a zero-width, invisible canvas on the AirDroid WebView.
-        const available    = container.clientWidth || window.innerWidth || 800;
-        const desiredWidth = Math.min(Math.max(available - 24, 280), 960);
-        const viewport     = page.getViewport({ scale: 1 });
-        const scale        = desiredWidth / viewport.width;
-        const scaled       = page.getViewport({ scale });
-
-        const canvas  = document.createElement("canvas");
-        canvas.width  = Math.floor(scaled.width);
-        canvas.height = Math.floor(scaled.height);
-        canvas.style.cssText = "display:block;box-shadow:0 2px 12px rgba(0,0,0,0.4);border-radius:4px;max-width:100%;height:auto;";
-
-        container.appendChild(canvas);
-
-        return page.render({
-          canvasContext: canvas.getContext("2d"),
-          viewport: scaled,
-        }).promise;
-      });
+      // No preview available (e.g. a non-PDF doc, or previews not generated yet)
+      // Fall back to opening the file directly.
+      loading.textContent = "Opening document…";
+      const w = window.open(href, "_blank");
+      if (!w) window.location.href = href;
     }
 
     function closeModal() {
