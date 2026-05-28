@@ -54,46 +54,28 @@
       );
     }
 
-    // ─── PDF Modal ────────────────────────────────────────────────────────────
-    function openModal(href, title, group) {
+  // ─── PDF Modal ────────────────────────────────────────────────────────────
+function openModal(href, title, group) {
   trackOpen(title, group, href);
-
-  // Broadened detection: any Android device, not just raw WebView
-  // AirDroid lockdown reports as Chrome so the old "wv" check missed it
-  const isAndroid = /Android/i.test(navigator.userAgent);
-
-  if (isAndroid) {
-    // Try opening in a new tab first (works if AirDroid allows it)
-    const w = window.open(href, "_blank");
-    // If new tab was blocked, fall back to same-tab navigation
-    if (!w || w.closed || typeof w.closed === "undefined") {
-      window.location.href = href;
-    }
-    return;
+  const w = window.open(href, "_blank");
+  if (!w || w.closed || typeof w.closed === "undefined") {
+    window.location.href = href;
   }
-
-  // Normal iframe modal for desktop / iOS
-  document.getElementById("modalTitle").textContent = title;
-  document.getElementById("modalDownload").href     = href;
-  document.getElementById("modalDownload").download = href.split("/").pop();
-  document.getElementById("pdfFrame").src           = href;
-  document.getElementById("pdfModal").classList.add("open");
-  document.body.style.overflow = "hidden";
 }
 
-    function closeModal() {
-      document.getElementById("pdfModal").classList.remove("open");
-      document.getElementById("pdfFrame").src = "";
-      document.body.style.overflow = "";
-    }
+function closeModal() {
+  document.getElementById("pdfModal").classList.remove("open");
+  document.getElementById("pdfFrame").src = "";
+  document.body.style.overflow = "";
+}
 
-    document.getElementById("pdfModal").addEventListener("click", e => {
-      if (e.target === e.currentTarget) closeModal();
-    });
+document.getElementById("pdfModal").addEventListener("click", e => {
+  if (e.target === e.currentTarget) closeModal();
+});
 
-    document.addEventListener("keydown", e => {
-      if (e.key === "Escape") closeModal();
-    });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeModal();
+});
 
     // ─── Accordion ────────────────────────────────────────────────────────────
     const panels = ["programs", "reference", "updates", "employee", "dot", "other"];
