@@ -1,39 +1,66 @@
-<script>
+<!-- ============================================================
+     CHANGE 1 OF 2 — Replace your existing modal HTML block
+     Find this in index.html (between </main> and <footer>):
+       <div id="pdfModal" role="dialog" ...> ... </div>
+     Replace the ENTIRE thing with the block below.
+     ============================================================ -->
+
+  <div id="pdfModal" role="dialog" aria-modal="true" aria-label="Document viewer">
+    <div class="modal-toolbar">
+      <span class="modal-title" id="modalTitle"></span>
+      <a id="modalDownload" href="#" download>⬇ Download</a>
+      <button class="modal-close" onclick="closeModal()">✕ Close</button>
+    </div>
+
+    <!-- PDF.js renders here — one canvas per page -->
+    <div id="pdfViewer" style="
+      flex: 1;
+      overflow-y: auto;
+      background: #525659;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      gap: 10px;
+    ">
+      <p id="pdfLoading" style="color:#fff;margin-top:40px;font-size:1rem;">
+        Loading document…
+      </p>
+    </div>
+  </div>
+
+
+<!-- ============================================================
+     CHANGE 2 OF 2 — Replace your entire <script> block
+     Find the opening <script> tag near the bottom of index.html
+     and replace everything from <script> to </script> with this.
+     ============================================================ -->
+
+  <!-- PDF.js library loaded from CDN (same-origin fallback built in) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <script>
     // ─── Config ───────────────────────────────────────────────────────────────
     const NEW_BADGE_DAYS = 7;
     const ANALYTICS_URL  = "https://script.google.com/macros/s/AKfycbzZfL1YUQQAD1YrpIAYStoEUNNyDOfAusULO2yJyPElDS8mdBlaHwvMDBUzdf7-Fy3e/exec";
+    const SW_CACHE_NAME  = "jrayl-v1";
 
-    // ─── SW Cache Name (must match sw.js) ─────────────────────────────────────
-    // FIX: used as fallback when fetch fails in restricted WebView environments
-    const SW_CACHE_NAME = "jrayl-v1";
-
-    // ─── Detect Android WebView (AirDroid lockdown browser) ───────────────────
-    // FIX: Android WebView cannot render PDFs inside <iframe> tags.
-    // Detection: WebView sets "wv" in UA, or is Android without a full Chrome UA.
-    function isAndroidWebView() {
-      const ua = navigator.userAgent;
-      return /wv/.test(ua) ||
-        (/Android/.test(ua) && !/Chrome\/[.0-9]* Mobile/.test(ua));
+    // ─── PDF.js worker ────────────────────────────────────────────────────────
+    // Points to the matching worker on the same CDN
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
     }
 
     // ─── Analytics ────────────────────────────────────────────────────────────
     function trackOpen(title, group, href) {
       if (!ANALYTICS_URL || ANALYTICS_URL === "YOUR_APPS_SCRIPT_URL_HERE") return;
       if (!navigator.onLine) return;
-
       const ua = navigator.userAgent.toLowerCase();
       let device = "Desktop";
       if (ua.includes("tablet") || ua.includes("ipad"))         device = "Tablet";
       else if (ua.includes("mobile") || ua.includes("android")) device = "Mobile";
-
-      const params = new URLSearchParams({
-        title,
-        group,
-        href,
-        device,
-        timestamp: new Date().toISOString(),
-      });
-
+      const params = new URLSearchParams({ title, group, href, device, timestamp: new Date().toISOString() });
       const img = new Image();
       img.src = `${ANALYTICS_URL}?${params.toString()}`;
     }
@@ -54,32 +81,75 @@
       );
     }
 
-  // ─── PDF Modal ────────────────────────────────────────────────────────────
-function openModal(href, title, group) {
-  trackOpen(title, group, href);
-  const fullUrl = new URL(href, window.location.href).toString();
-  const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fullUrl)}&embedded=true`;
-  document.getElementById("modalTitle").textContent    = title;
-  document.getElementById("modalDownload").href        = href;
-  document.getElementById("modalDownload").download    = href.split("/").pop();
-  document.getElementById("pdfFrame").src              = viewerUrl;
-  document.getElementById("pdfModal").classList.add("open");
-  document.body.style.overflow = "hidden";
-}
+    // ─── PDF Modal ────────────────────────────────────────────────────────────
+    function openModal(href, title, group) {
+      trackOpen(title, group, href);
 
-function closeModal() {
-  document.getElementById("pdfModal").classList.remove("open");
-  document.getElementById("pdfFrame").src = "";
-  document.body.style.overflow = "";
-}
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalDownload").href     = href;
+      document.getElementById("modalDownload").download = href.split("/").pop();
+      document.getElementById("pdfModal").classList.add("open");
+      document.body.style.overflow = "hidden";
 
-document.getElementById("pdfModal").addEventListener("click", e => {
-  if (e.target === e.currentTarget) closeModal();
-});
+      const viewer  = document.getElementById("pdfViewer");
+      const loading = document.getElementById("pdfLoading");
+      viewer.innerHTML = "";
+      viewer.appendChild(loading);
+      loading.textContent = "Loading document…";
+      loading.style.display = "block";
 
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape") closeModal();
-});
+      // PDF.js fetches the file from the same Netlify domain — always allowed
+      pdfjsLib.getDocument(href).promise
+        .then(pdf => {
+          loading.style.display = "none";
+          const renders = [];
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            renders.push(renderPage(pdf, pageNum, viewer));
+          }
+          return Promise.all(renders);
+        })
+        .catch(err => {
+          console.error("PDF.js error:", err);
+          loading.textContent = "⚠️ Could not load document. Try the Download button above.";
+        });
+    }
+
+    function renderPage(pdf, pageNum, container) {
+      return pdf.getPage(pageNum).then(page => {
+        // Scale to fit the viewer width on any screen size
+        const viewerWidth = container.clientWidth || window.innerWidth;
+        const desiredWidth = Math.min(viewerWidth - 24, 960);
+        const viewport     = page.getViewport({ scale: 1 });
+        const scale        = desiredWidth / viewport.width;
+        const scaled       = page.getViewport({ scale });
+
+        const canvas    = document.createElement("canvas");
+        canvas.width    = scaled.width;
+        canvas.height   = scaled.height;
+        canvas.style.cssText = "display:block;box-shadow:0 2px 12px rgba(0,0,0,0.4);border-radius:4px;max-width:100%;";
+
+        container.appendChild(canvas);
+
+        return page.render({
+          canvasContext: canvas.getContext("2d"),
+          viewport: scaled,
+        }).promise;
+      });
+    }
+
+    function closeModal() {
+      document.getElementById("pdfModal").classList.remove("open");
+      document.getElementById("pdfViewer").innerHTML = "";
+      document.body.style.overflow = "";
+    }
+
+    document.getElementById("pdfModal").addEventListener("click", e => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeModal();
+    });
 
     // ─── Accordion ────────────────────────────────────────────────────────────
     const panels = ["programs", "reference", "updates", "employee", "dot", "other"];
@@ -182,10 +252,10 @@ document.addEventListener("keydown", e => {
       viewBtn.addEventListener("click", () => openModal(doc.href, doc.title, doc.group));
 
       const dlBtn = document.createElement("a");
-      dlBtn.className = "doc-btn btn-download";
-      dlBtn.href      = doc.href;
-      dlBtn.download  = doc.href.split("/").pop();
-      dlBtn.title     = "Download";
+      dlBtn.className   = "doc-btn btn-download";
+      dlBtn.href        = doc.href;
+      dlBtn.download    = doc.href.split("/").pop();
+      dlBtn.title       = "Download";
       dlBtn.textContent = "⬇";
 
       actions.appendChild(viewBtn);
@@ -212,32 +282,25 @@ document.addEventListener("keydown", e => {
     }
 
     // ─── Load message banner ──────────────────────────────────────────────────
-    // FIX: removed cache: "no-store" — allows service worker to serve cached
-    //      version when network is blocked by lockdown browser.
     async function loadMessage() {
       try {
         const res = await fetch("message.json");
         const msg = await res.json();
         const el  = document.getElementById("siteMessage");
         if (!el) return;
-
         if (!msg.active) { el.style.display = "none"; return; }
-
         el.textContent = msg.text;
-
         const styles = {
           default: { background: "#ffffff", border: "#000000", color: "#000000" },
           urgent:  { background: "#fee2e2", border: "#dc2626", color: "#991b1b" },
           info:    { background: "#eff6ff", border: "#2563eb", color: "#1e40af" },
           success: { background: "#f0fdf4", border: "#16a34a", color: "#15803d" },
         };
-
         const s = styles[msg.style] || styles.default;
         el.style.background  = s.background;
         el.style.borderColor = s.border;
         el.style.color       = s.color;
         el.style.display     = "inline-block";
-
       } catch {
         const el = document.getElementById("siteMessage");
         if (el) el.style.display = "none";
@@ -245,34 +308,25 @@ document.addEventListener("keydown", e => {
     }
 
     // ─── Load manifest ────────────────────────────────────────────────────────
-    // FIX 1: removed cache: "no-store" so service worker can intercept and serve
-    //         the cached manifest when the network fetch is blocked.
-    // FIX 2: added SW cache fallback — if the network fetch still fails (e.g.
-    //         lockdown browser blocks fetch entirely), we manually open the SW
-    //         cache and pull docs-manifest.json from there directly.
     async function loadDocs() {
       let docs;
-
       try {
         const res = await fetch("docs-manifest.json");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         docs = await res.json();
       } catch (networkErr) {
         console.warn("Network fetch failed, trying SW cache:", networkErr);
-
         try {
           const cache  = await caches.open(SW_CACHE_NAME);
           const cached = await cache.match("docs-manifest.json");
           if (!cached) throw new Error("Not found in SW cache");
           docs = await cached.json();
-          console.info("Loaded docs-manifest.json from SW cache.");
         } catch (cacheErr) {
           console.error("SW cache fallback also failed:", cacheErr);
           showLoadError();
           return;
         }
       }
-
       renderList("panel-programs",  docs.filter(d => d.group === "programs"));
       renderList("panel-reference", docs.filter(d => d.group === "reference"));
       renderList("panel-updates",   docs.filter(d => d.group === "updates"));
