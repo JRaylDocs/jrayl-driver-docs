@@ -1,389 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JRayl Driver Support Documents</title>
-
-  <!-- PWA -->
-  <link rel="manifest" href="site.webmanifest" />
-  <meta name="theme-color" content="#000000" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-  <meta name="apple-mobile-web-app-title" content="JRayl Docs" />
-
-  <link rel="stylesheet" href="style.css" />
-
-  <style>
-    main { padding: 16px; }
-
-    .docs-section {
-      max-width: 960px;
-      margin: 0 auto;
-    }
-
-    .site-header {
-      text-align: center;
-      margin-bottom: 28px;
-    }
-
-    .site-logo {
-      max-width: 180px;
-      width: 100%;
-      height: auto;
-      margin: 0 auto 12px;
-      display: block;
-    }
-
-    .site-message {
-      display: inline-block;
-      margin: 12px auto 0;
-      padding: 14px 18px;
-      background: #ffffff;
-      border: 3px solid #000;
-      border-radius: 14px;
-      font-weight: 900;
-      font-size: 1.25rem;
-      line-height: 1.25;
-      letter-spacing: 0.2px;
-      color: #000000;
-      max-width: 920px;
-    }
-
-    /* ── Offline banner ── */
-    #offlineBanner {
-      display: none;
-      background: #f59e0b;
-      color: #000;
-      text-align: center;
-      font-weight: 700;
-      padding: 10px 16px;
-      font-size: 0.95rem;
-    }
-
-    .cards-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    @media (min-width: 720px) {
-      .cards-grid { grid-template-columns: 1fr 1fr; }
-    }
-
-    .doc-card {
-      padding: 14px;
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      position: relative;
-    }
-
-    .doc-card h3 {
-      margin: 0;
-      font-size: 1.05rem;
-      line-height: 1.25;
-      padding-right: 52px;
-    }
-
-    /* ── NEW badge ── */
-    .badge-new {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      background: #dc2626;
-      color: #fff;
-      font-size: 0.65rem;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      padding: 3px 7px;
-      border-radius: 6px;
-      text-transform: uppercase;
-    }
-
-    /* ── Timestamp ── */
-    .doc-meta {
-      font-size: 0.78rem;
-      color: #6b7280;
-      margin: 0;
-    }
-
-    /* ── Card buttons row ── */
-    .card-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 4px;
-    }
-
-    .doc-btn {
-      flex: 1;
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      padding: 12px 10px;
-      border-radius: 12px;
-      font-weight: 600;
-      text-decoration: none;
-      font-size: 0.9rem;
-      cursor: pointer;
-      border: none;
-    }
-
-    .btn-download {
-      flex: 0 0 auto;
-      background: transparent;
-      border: 2px solid currentColor !important;
-      opacity: 0.7;
-      font-size: 1.1rem;
-      padding: 10px 14px;
-    }
-
-    /* ── PDF Viewer Modal ── */
-    #pdfModal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      background: rgba(0,0,0,0.82);
-      flex-direction: column;
-    }
-
-    #pdfModal.open {
-      display: flex;
-    }
-
-    .modal-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 16px;
-      background: #111;
-      color: #fff;
-      gap: 12px;
-      flex-shrink: 0;
-    }
-
-    .modal-title {
-      font-weight: 700;
-      font-size: 1rem;
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .modal-toolbar a,
-    .modal-toolbar button {
-      background: #fff;
-      color: #000;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 0.85rem;
-      cursor: pointer;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-
-    .modal-close {
-      background: #dc2626 !important;
-      color: #fff !important;
-    }
-
-    #pdfFrame {
-      flex: 1;
-      width: 100%;
-      border: none;
-      background: #525659;
-    }
-
-    /* Accordion headers */
-    .accordion-header {
-      cursor: pointer;
-      user-select: none;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 28px;
-      margin-bottom: 8px;
-    }
-
-    .accordion-header .chev {
-      margin-left: auto;
-      font-weight: 700;
-    }
-
-    .nested-wrap {
-      margin-top: 10px;
-      padding-left: 10px;
-      border-left: 4px solid rgba(0,0,0,0.12);
-    }
-
-    .nested-header {
-      cursor: pointer;
-      user-select: none;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 14px 0 8px;
-      font-size: 1.05rem;
-      font-weight: 800;
-    }
-
-    .nested-header .chev {
-      margin-left: auto;
-      font-weight: 900;
-    }
-
-    .hidden { display: none; }
-
-    /* ── Emergency Banner ── */
-    .emergency-banner {
-      background: #7f1d1d;
-      color: #fff;
-      padding: 12px 16px;
-      text-align: center;
-      font-family: Arial, sans-serif;
-    }
-
-    .emergency-banner h2 {
-      margin: 0 0 8px;
-      font-size: 0.85rem;
-      font-weight: 800;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      opacity: 0.85;
-    }
-
-    .emergency-contacts {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px 28px;
-    }
-
-    .emergency-contact {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-    }
-
-    .emergency-contact .label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      opacity: 0.75;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .emergency-contact a {
-      color: #fff;
-      font-size: 1.1rem;
-      font-weight: 900;
-      text-decoration: none;
-      letter-spacing: 0.5px;
-    }
-
-    .emergency-contact a:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-
-<body>
-
-  <!-- Offline banner -->
-  <div id="offlineBanner">
-    ⚠️ You are offline — all downloaded documents are still available
-  </div>
-
-  <header class="site-header">
-    <img src="jrayl-logo.png" alt="JRayl Transport Logo" class="site-logo" />
-    <h1>Driver Support Documents</h1>
-    <p>Your quick-access resource hub</p>
-    <div class="site-message" id="siteMessage" style="display:none"></div>
-  </header>
-
-  <main>
-    <section class="docs-section">
-
-      <h2 class="accordion-header" onclick="toggleAccordion('programs')">
-        Driver Programs <span id="chev-programs" class="chev">▶</span>
-      </h2>
-      <div id="panel-programs" class="cards-grid hidden"></div>
-
-      <h2 class="accordion-header" onclick="toggleAccordion('reference')">
-        Driver Reference <span id="chev-reference" class="chev">▶</span>
-      </h2>
-      <div id="panel-reference" class="cards-grid hidden"></div>
-
-      <h2 class="accordion-header" onclick="toggleAccordion('updates')">
-        JRayl Updates <span id="chev-updates" class="chev">▶</span>
-      </h2>
-      <div id="panel-updates" class="cards-grid hidden"></div>
-
-      <h2 class="accordion-header" onclick="toggleAccordion('employee')">
-        JRayl Employee Docs <span id="chev-employee" class="chev">▶</span>
-      </h2>
-      <div id="panel-employee" class="cards-grid hidden"></div>
-
-      <h2 class="accordion-header" onclick="toggleAccordion('dot')">
-        DOT Compliance <span id="chev-dot" class="chev">▶</span>
-      </h2>
-      <div id="panel-dot" class="hidden">
-        <div id="dotDocs" class="cards-grid"></div>
-        <div class="nested-wrap">
-          <div class="nested-header" onclick="toggleNested('trailer')">
-            Trailer Registration <span id="chev-trailer" class="chev">▶</span>
-          </div>
-          <div id="panel-trailer" class="cards-grid hidden"></div>
-        </div>
-      </div>
-
-      <h2 class="accordion-header" onclick="toggleAccordion('other')">
-        JRayl People Portal <span id="chev-other" class="chev">▶</span>
-      </h2>
-      <div id="panel-other" class="cards-grid hidden"></div>
-
-    </section>
-  </main>
-
-  <!-- ── Emergency Banner ── always visible ── -->
-  <div class="emergency-banner">
-    <h2>🚨 Emergency Contacts</h2>
-    <div class="emergency-contacts">
-      <div class="emergency-contact">
-        <span class="label">Safety / Accidents</span>
-        <a href="tel:3302836331">330-283-6331</a>
-      </div>
-      <div class="emergency-contact">
-        <span class="label">After Hours Dispatch</span>
-        <a href="tel:3307841134">330-784-1134 EXT 3412</a>
-      </div>
-    </div>
-  </div>
-
-  <footer>
-    <p>© JRayl Transport – Driver Resource Portal</p>
-  </footer>
-
-  <!-- ── PDF Viewer Modal ─────────────────────────────────────────────────── -->
-  <div id="pdfModal" role="dialog" aria-modal="true" aria-label="Document viewer">
-    <div class="modal-toolbar">
-      <span class="modal-title" id="modalTitle"></span>
-      <a id="modalDownload" href="#" download>⬇ Download</a>
-      <button class="modal-close" onclick="closeModal()">✕ Close</button>
-    </div>
-    <iframe id="pdfFrame" title="Document viewer"></iframe>
-  </div>
-
-  <script>
+<script>
     // ─── Config ───────────────────────────────────────────────────────────────
     const NEW_BADGE_DAYS = 7;
     const ANALYTICS_URL  = "https://script.google.com/macros/s/AKfycbzZfL1YUQQAD1YrpIAYStoEUNNyDOfAusULO2yJyPElDS8mdBlaHwvMDBUzdf7-Fy3e/exec";
+
+    // ─── SW Cache Name (must match sw.js) ─────────────────────────────────────
+    // FIX: used as fallback when fetch fails in restricted WebView environments
+    const SW_CACHE_NAME = "jrayl-v1";
+
+    // ─── Detect Android WebView (AirDroid lockdown browser) ───────────────────
+    // FIX: Android WebView cannot render PDFs inside <iframe> tags.
+    // Detection: WebView sets "wv" in UA, or is Android without a full Chrome UA.
+    function isAndroidWebView() {
+      const ua = navigator.userAgent;
+      return /wv/.test(ua) ||
+        (/Android/.test(ua) && !/Chrome\/[.0-9]* Mobile/.test(ua));
+    }
 
     // ─── Analytics ────────────────────────────────────────────────────────────
     function trackOpen(title, group, href) {
@@ -403,7 +34,6 @@
         timestamp: new Date().toISOString(),
       });
 
-      // Use an image pixel — most reliable way to hit Google Apps Script
       const img = new Image();
       img.src = `${ANALYTICS_URL}?${params.toString()}`;
     }
@@ -426,15 +56,28 @@
 
     // ─── PDF Modal ────────────────────────────────────────────────────────────
     function openModal(href, title, group) {
-      document.getElementById("modalTitle").textContent = title;
-      document.getElementById("modalDownload").href     = href;
-      document.getElementById("modalDownload").download = href.split("/").pop();
-      document.getElementById("pdfFrame").src           = href;
+      // Fire analytics regardless of view method
+      trackOpen(title, group, href);
+
+      // FIX: Android WebView (AirDroid lockdown) cannot render PDFs in iframes.
+      // Trigger a direct download instead so the device opens the file natively.
+      if (isAndroidWebView()) {
+        const a = document.createElement("a");
+        a.href     = href;
+        a.download = href.split("/").pop();
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
+      }
+
+      // Normal modal path for desktop / iOS
+      document.getElementById("modalTitle").textContent    = title;
+      document.getElementById("modalDownload").href        = href;
+      document.getElementById("modalDownload").download    = href.split("/").pop();
+      document.getElementById("pdfFrame").src              = href;
       document.getElementById("pdfModal").classList.add("open");
       document.body.style.overflow = "hidden";
-
-      // Fire analytics ping in the background
-      trackOpen(title, group, href);
     }
 
     function closeModal() {
@@ -503,7 +146,6 @@
     }
 
     // ─── Card builder ─────────────────────────────────────────────────────────
-
     function isNew(dateAdded) {
       if (!dateAdded) return false;
       const diffDays = (new Date() - new Date(dateAdded)) / (1000 * 60 * 60 * 24);
@@ -514,12 +156,12 @@
       if (!isoString) return null;
       const d = new Date(isoString);
       const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      const date = `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-      const hours   = d.getHours();
-      const minutes = String(d.getMinutes()).padStart(2, "0");
-      const ampm    = hours >= 12 ? "PM" : "AM";
-      const h12     = hours % 12 || 12;
-      return `${date} ${h12}:${minutes} ${ampm}`;
+      const date   = `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+      const hours  = d.getHours();
+      const mins   = String(d.getMinutes()).padStart(2, "0");
+      const ampm   = hours >= 12 ? "PM" : "AM";
+      const h12    = hours % 12 || 12;
+      return `${date} ${h12}:${mins} ${ampm}`;
     }
 
     function createCard(doc) {
@@ -528,7 +170,7 @@
 
       if (isNew(doc.dateAdded)) {
         const badge = document.createElement("span");
-        badge.className = "badge-new";
+        badge.className   = "badge-new";
         badge.textContent = "New";
         card.appendChild(badge);
       }
@@ -539,7 +181,7 @@
 
       if (doc.dateModified) {
         const meta = document.createElement("p");
-        meta.className = "doc-meta";
+        meta.className   = "doc-meta";
         meta.textContent = `Updated ${formatDate(doc.dateModified)}`;
         card.appendChild(meta);
       }
@@ -548,15 +190,15 @@
       actions.className = "card-actions";
 
       const viewBtn = document.createElement("button");
-      viewBtn.className = "doc-btn btn-view";
+      viewBtn.className   = "doc-btn btn-view";
       viewBtn.textContent = doc.type === "pdf" ? "View PDF" : "View Document";
       viewBtn.addEventListener("click", () => openModal(doc.href, doc.title, doc.group));
 
       const dlBtn = document.createElement("a");
       dlBtn.className = "doc-btn btn-download";
-      dlBtn.href = doc.href;
-      dlBtn.download = doc.href.split("/").pop();
-      dlBtn.title = "Download";
+      dlBtn.href      = doc.href;
+      dlBtn.download  = doc.href.split("/").pop();
+      dlBtn.title     = "Download";
       dlBtn.textContent = "⬇";
 
       actions.appendChild(viewBtn);
@@ -573,22 +215,29 @@
       docs.forEach(doc => container.appendChild(createCard(doc)));
     }
 
-    // ─── Load message banner ─────────────────────────────────────────────────────
+    // ─── Shared error renderer ────────────────────────────────────────────────
+    function showLoadError() {
+      const errorMsg = "<p style='color:red;padding:8px'>⚠️ Could not load documents. Check your connection.</p>";
+      document.querySelectorAll(".cards-grid").forEach(el => {
+        el.innerHTML = errorMsg;
+        el.classList.remove("hidden");
+      });
+    }
+
+    // ─── Load message banner ──────────────────────────────────────────────────
+    // FIX: removed cache: "no-store" — allows service worker to serve cached
+    //      version when network is blocked by lockdown browser.
     async function loadMessage() {
       try {
-        const res  = await fetch("message.json", { cache: "no-store" });
-        const msg  = await res.json();
-        const el   = document.getElementById("siteMessage");
+        const res = await fetch("message.json");
+        const msg = await res.json();
+        const el  = document.getElementById("siteMessage");
         if (!el) return;
 
-        if (!msg.active) {
-          el.style.display = "none";
-          return;
-        }
+        if (!msg.active) { el.style.display = "none"; return; }
 
         el.textContent = msg.text;
 
-        // Style variants dispatch can set in message.json
         const styles = {
           default: { background: "#ffffff", border: "#000000", color: "#000000" },
           urgent:  { background: "#fee2e2", border: "#dc2626", color: "#991b1b" },
@@ -597,45 +246,55 @@
         };
 
         const s = styles[msg.style] || styles.default;
-        el.style.background   = s.background;
-        el.style.borderColor  = s.border;
-        el.style.color        = s.color;
-        el.style.display      = "inline-block";
+        el.style.background  = s.background;
+        el.style.borderColor = s.border;
+        el.style.color       = s.color;
+        el.style.display     = "inline-block";
 
       } catch {
-        // message.json missing or invalid — just hide the banner
         const el = document.getElementById("siteMessage");
         if (el) el.style.display = "none";
       }
     }
 
     // ─── Load manifest ────────────────────────────────────────────────────────
+    // FIX 1: removed cache: "no-store" so service worker can intercept and serve
+    //         the cached manifest when the network fetch is blocked.
+    // FIX 2: added SW cache fallback — if the network fetch still fails (e.g.
+    //         lockdown browser blocks fetch entirely), we manually open the SW
+    //         cache and pull docs-manifest.json from there directly.
     async function loadDocs() {
+      let docs;
+
       try {
-        const res  = await fetch("docs-manifest.json", { cache: "no-store" });
-        const docs = await res.json();
+        const res = await fetch("docs-manifest.json");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        docs = await res.json();
+      } catch (networkErr) {
+        console.warn("Network fetch failed, trying SW cache:", networkErr);
 
-        renderList("panel-programs",  docs.filter(d => d.group === "programs"));
-        renderList("panel-reference", docs.filter(d => d.group === "reference"));
-        renderList("panel-updates",   docs.filter(d => d.group === "updates"));
-        renderList("panel-employee",  docs.filter(d => d.group === "employee"));
-        renderList("dotDocs",         docs.filter(d => d.group === "dot"));
-        renderList("panel-trailer",   docs.filter(d => d.group === "maintenance"));
-        renderList("panel-other",     docs.filter(d => d.group === "other"));
-
-      } catch (err) {
-        console.error(err);
-        const other = document.getElementById("panel-other");
-        if (other) other.innerHTML = "<p>Unable to load documents.</p>";
+        try {
+          const cache  = await caches.open(SW_CACHE_NAME);
+          const cached = await cache.match("docs-manifest.json");
+          if (!cached) throw new Error("Not found in SW cache");
+          docs = await cached.json();
+          console.info("Loaded docs-manifest.json from SW cache.");
+        } catch (cacheErr) {
+          console.error("SW cache fallback also failed:", cacheErr);
+          showLoadError();
+          return;
+        }
       }
+
+      renderList("panel-programs",  docs.filter(d => d.group === "programs"));
+      renderList("panel-reference", docs.filter(d => d.group === "reference"));
+      renderList("panel-updates",   docs.filter(d => d.group === "updates"));
+      renderList("panel-employee",  docs.filter(d => d.group === "employee"));
+      renderList("dotDocs",         docs.filter(d => d.group === "dot"));
+      renderList("panel-trailer",   docs.filter(d => d.group === "maintenance"));
+      renderList("panel-other",     docs.filter(d => d.group === "other"));
     }
 
     loadDocs();
     loadMessage();
   </script>
-
-</body>
-</html>
-
-
-
