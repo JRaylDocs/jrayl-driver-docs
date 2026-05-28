@@ -454,37 +454,51 @@
         return;
       }
 
-      // Safety timeout — if rendering hasn't started in 25s, stop waiting
+      // Safety timeout — if rendering hasn't finished in 30s, stop waiting
       let finished = false;
       const timeout = setTimeout(() => {
         if (!finished) {
           loading.style.display = "block";
           loading.textContent = "⚠️ Taking too long to load. Use the Download button above.";
         }
-      }, 25000);
+      }, 30000);
 
-      // PDF.js fetches the file from the same Netlify domain — always allowed.
-      // Wrapped in requestAnimationFrame so the modal has painted and has a
-      // real width before we measure and size the canvas.
-      requestAnimationFrame(() => {
-        pdfjsLib.getDocument(href).promise
-          .then(pdf => {
-            finished = true;
-            clearTimeout(timeout);
-            loading.style.display = "none";
-            const renders = [];
-            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-              renders.push(renderPage(pdf, pageNum, viewer));
-            }
-            return Promise.all(renders);
-          })
-          .catch(err => {
-            finished = true;
-            clearTimeout(timeout);
-            console.error("PDF.js error:", err);
-            loading.style.display = "block";
-            loading.textContent = "⚠️ Could not load document. Try the Download button above.";
-          });
+      // ── PATH B ──────────────────────────────────────────────────────────────
+      // Instead of handing the .pdf URL to PDF.js (which AirDroid intercepts and
+      // turns into a download prompt), we fetch the raw bytes ourselves in the
+      // background as an ArrayBuffer, then feed those bytes directly to PDF.js.
+      // Background data fetches usually slip past the download interceptor.
+      // On-screen status text shows exactly where it gets to, since we can't
+      // see the tablet's console.
+      requestAnimationFrame(async () => {
+        try {
+          loading.textContent = "Fetching document…";
+          const res = await fetch(href, { headers: { "Accept": "application/pdf" } });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+
+          loading.textContent = "Reading document…";
+          const bytes = await res.arrayBuffer();
+
+          loading.textContent = "Rendering… (" + Math.round(bytes.byteLength / 1024) + " KB)";
+          const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+
+          finished = true;
+          clearTimeout(timeout);
+          loading.style.display = "none";
+
+          const renders = [];
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            renders.push(renderPage(pdf, pageNum, viewer));
+          }
+          await Promise.all(renders);
+        } catch (err) {
+          finished = true;
+          clearTimeout(timeout);
+          console.error("PDF load error:", err);
+          loading.style.display = "block";
+          loading.textContent = "⚠️ " + (err && err.message ? err.message : "Could not load") +
+            " — use the Download button above.";
+        }
       });
     }
 
