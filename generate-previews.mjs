@@ -1,47 +1,82 @@
-name: Generate PDF Previews
+/**
+ * generate-previews.mjs
+ *
+ * Converts every PDF in the docs/ subfolders into PNG images that can be
+ * displayed inline in the website viewer. This exists because the AirDroid
+ * lockdown browser intercepts PDFs and forces a download prompt, but shows
+ * PNG images inline without any problem.
+ *
+ * Output:
+ *   - PNGs saved to  docs/<folder>/_previews/<name>-<page>.png
+ *   - docs-previews.json at the project root, mapping each PDF's href to
+ *     its list of preview image paths.
+ *
+ * Run this whenever you add or change PDFs (same as generate-manifest.js):
+ *   node generate-previews.mjs
+ *
+ * One-time setup (run once in the project folder):
+ *   npm install pdf-to-img@6.1.0
+ */
 
-# Runs whenever PDFs (or the scripts) change on the main branch,
-# and can also be triggered manually from the Actions tab.
-on:
-  push:
-    branches: [main]
-    paths:
-      - "docs/**/*.pdf"
-      - "docs/**/*.PDF"
-      - "generate-previews.mjs"
-      - ".github/workflows/generate-previews.yml"
-  workflow_dispatch:
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { pdf } from "pdf-to-img";
 
-# Allow the workflow to commit the generated images back to the repo
-permissions:
-  contents: write
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-jobs:
-  build-previews:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+// ─── Same folder map as generate-manifest.js ────────────────────────────────
+const FOLDERS = [
+  "programs",
+  "reference",
+  "updates",
+  "employee",
+  "dot",
+  "dot/maintenance",
+  "other",
+];
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+const DOCS_DIR = path.join(__dirname, "docs");
+const OUT_JSON = path.join(__dirname, "docs-previews.json");
+const SCALE    = 2.0; // higher = sharper images, larger files. 2.0 is a good balance.
 
-      - name: Install pdf-to-img
-        run: npm install pdf-to-img@6.1.0
+const previews = {};
 
-      - name: Generate PNG previews
-        run: node generate-previews.mjs
+for (const folder of FOLDERS) {
+  const folderPath = path.join(DOCS_DIR, folder);
+  if (!fs.existsSync(folderPath)) continue;
 
-      - name: Commit previews back to the repo
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/**/_previews/*.png docs-previews.json
-          if git diff --staged --quiet; then
-            echo "No preview changes to commit."
-          else
-            git commit -m "Auto-generate PDF previews [skip ci]"
-            git push
-          fi
+  const pdfs = fs.readdirSync(folderPath).filter(f => /\.pdf$/i.test(f) &&
+    fs.statSync(path.join(folderPath, f)).isFile());
+
+  if (pdfs.length === 0) continue;
+
+  const previewDir = path.join(folderPath, "_previews");
+  if (!fs.existsSync(previewDir)) fs.mkdirSync(previewDir, { recursive: true });
+
+  for (const file of pdfs) {
+    const pdfPath  = path.join(folderPath, file);
+    const href     = `docs/${folder}/${file}`;
+    const baseName = file.replace(/\.pdf$/i, "");
+    const pages    = [];
+
+    try {
+      const doc = await pdf(pdfPath, { scale: SCALE });
+      let pageNum = 1;
+      for await (const image of doc) {
+        const pngName = `${baseName}-${pageNum}.png`;
+        fs.writeFileSync(path.join(previewDir, pngName), image);
+        pages.push(`docs/${folder}/_previews/${pngName}`);
+        pageNum++;
+      }
+      previews[href] = pages;
+      console.log(`  🖼  ${href}  →  ${pages.length} page(s)`);
+    } catch (err) {
+      console.error(`  ⚠️  Failed on ${href}: ${err.message}`);
+    }
+  }
+}
+
+fs.writeFileSync(OUT_JSON, JSON.stringify(previews, null, 2));
+console.log(`\n✨ docs-previews.json written with ${Object.keys(previews).length} PDF(s).`);
+console.log(`📁 PNG previews saved under each docs/<folder>/_previews/ folder.\n`);
