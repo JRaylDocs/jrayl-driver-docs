@@ -388,8 +388,8 @@
     </div>
   </div>
 
-  <!-- PDF.js library loaded from CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- PDF.js library hosted locally (same origin — works in AirDroid lockdown) -->
+  <script src="pdfjs/pdf.min.js"></script>
 
   <script>
     // ─── Config ───────────────────────────────────────────────────────────────
@@ -397,10 +397,9 @@
     const ANALYTICS_URL  = "https://script.google.com/macros/s/AKfycbzZfL1YUQQAD1YrpIAYStoEUNNyDOfAusULO2yJyPElDS8mdBlaHwvMDBUzdf7-Fy3e/exec";
     const SW_CACHE_NAME  = "jrayl-v1";
 
-    // ─── PDF.js worker ────────────────────────────────────────────────────────
+    // ─── PDF.js worker (local, same origin) ─────────────────────────────────────
     if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "pdfjs/pdf.worker.min.js";
     }
 
     // ─── Analytics ────────────────────────────────────────────────────────────
@@ -449,15 +448,26 @@
       loading.textContent = "Loading document…";
       loading.style.display = "block";
 
-      // Guard: if PDF.js library failed to load (CDN blocked), tell the user
+      // Guard: if PDF.js library failed to load, tell the user
       if (!window.pdfjsLib) {
         loading.textContent = "⚠️ Viewer unavailable. Use the Download button above.";
         return;
       }
 
+      // Safety timeout — if rendering hasn't started in 25s, stop waiting
+      let finished = false;
+      const timeout = setTimeout(() => {
+        if (!finished) {
+          loading.style.display = "block";
+          loading.textContent = "⚠️ Taking too long to load. Use the Download button above.";
+        }
+      }, 25000);
+
       // PDF.js fetches the file from the same Netlify domain — always allowed
       pdfjsLib.getDocument(href).promise
         .then(pdf => {
+          finished = true;
+          clearTimeout(timeout);
           loading.style.display = "none";
           const renders = [];
           for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -466,6 +476,8 @@
           return Promise.all(renders);
         })
         .catch(err => {
+          finished = true;
+          clearTimeout(timeout);
           console.error("PDF.js error:", err);
           loading.style.display = "block";
           loading.textContent = "⚠️ Could not load document. Try the Download button above.";
@@ -698,4 +710,5 @@
   </script>
 
 </body>
+</html>
 </html>
