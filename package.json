@@ -3,5 +3,8 @@
   "private": true,
   "scripts": {
     "build": "node generate-docs-manifest.js"
+  },
+  "dependencies": {
+    "pdf-to-img": "^6.1.0"
   }
 }
