@@ -4,16 +4,22 @@
  * Strategy:
  *  - App shell (HTML, CSS, logo)                  → Cache First
  *  - docs-manifest.json + docs-previews.json      → Network First (always fresh)
- *  - Individual doc files + preview PNGs (/docs/) → Cache First, fall back to network
+ *  - Doc files + preview PNGs (/docs/)            → Cache First, cached ON DEMAND
+ *
+ * IMPORTANT: We intentionally do NOT pre-cache every document/preview on install.
+ * With hundreds of preview images, bulk pre-caching made the install hang and
+ * the worker loop on the tablets. Instead, each file is cached the first time
+ * it's actually opened — fast install, no loop. Files a driver has opened once
+ * are then available offline.
  *
  * To force a full refresh on all tablets, bump CACHE_VERSION below.
  */
 
-const CACHE_VERSION = "jrayl-v5";              // ← bump this to force all tablets to refresh
+const CACHE_VERSION = "jrayl-v6";              // ← bump this to force all tablets to refresh
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_DOCS    = `${CACHE_VERSION}-docs`;
 
-// App shell — cached immediately on install
+// App shell — cached immediately on install (small, fast)
 const SHELL_FILES = [
   "./",
   "./index.html",
@@ -25,47 +31,13 @@ const SHELL_FILES = [
 // JSON data files that must always be tried fresh from the network first
 const NETWORK_FIRST = ["docs-manifest.json", "docs-previews.json"];
 
-// ─── Install ──────────────────────────────────────────────────────────────────
+// ─── Install: cache only the small app shell (NO bulk doc pre-caching) ────────
 self.addEventListener("install", event => {
   event.waitUntil(
     (async () => {
-      // 1. Cache the app shell (each file individually so one failure won't abort)
       const staticCache = await caches.open(CACHE_STATIC);
+      // Add each individually so one failure can't abort the whole install
       await Promise.allSettled(SHELL_FILES.map(f => staticCache.add(f)));
-
-      // 2. Pre-cache every doc AND every preview image in the background
-      try {
-        const res  = await fetch("./docs-manifest.json", { cache: "no-store" });
-        const docs  = await res.json();
-        const docCache = await caches.open(CACHE_DOCS);
-
-        // Original document files
-        await Promise.allSettled(
-          docs.map(async doc => {
-            try {
-              const r = await fetch(doc.href);
-              if (r.ok) await docCache.put(doc.href, r);
-            } catch {}
-          })
-        );
-
-        // Preview PNGs from docs-previews.json
-        try {
-          const pRes = await fetch("./docs-previews.json", { cache: "no-store" });
-          const pMap = await pRes.json();
-          const allPngs = Object.values(pMap).flat();
-          await Promise.allSettled(
-            allPngs.map(async src => {
-              try {
-                const r = await fetch(src);
-                if (r.ok) await docCache.put(src, r);
-              } catch {}
-            })
-          );
-        } catch {}
-      } catch {
-        // Manifest unavailable — shell-only cache is fine
-      }
     })()
   );
   self.skipWaiting();
@@ -96,7 +68,7 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // Doc files and preview images → Cache First (pre-cached on install)
+  // Doc files and preview images → Cache First, cached on first open
   if (url.pathname.includes("/docs/")) {
     event.respondWith(cacheFirstThenNetwork(request, CACHE_DOCS));
     return;
