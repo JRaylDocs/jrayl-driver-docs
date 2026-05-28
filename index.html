@@ -56,29 +56,30 @@
 
     // ─── PDF Modal ────────────────────────────────────────────────────────────
     function openModal(href, title, group) {
-      // Fire analytics regardless of view method
-      trackOpen(title, group, href);
+  trackOpen(title, group, href);
 
-      // FIX: Android WebView (AirDroid lockdown) cannot render PDFs in iframes.
-      // Trigger a direct download instead so the device opens the file natively.
-      if (isAndroidWebView()) {
-        const a = document.createElement("a");
-        a.href     = href;
-        a.download = href.split("/").pop();
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        return;
-      }
+  // Broadened detection: any Android device, not just raw WebView
+  // AirDroid lockdown reports as Chrome so the old "wv" check missed it
+  const isAndroid = /Android/i.test(navigator.userAgent);
 
-      // Normal modal path for desktop / iOS
-      document.getElementById("modalTitle").textContent    = title;
-      document.getElementById("modalDownload").href        = href;
-      document.getElementById("modalDownload").download    = href.split("/").pop();
-      document.getElementById("pdfFrame").src              = href;
-      document.getElementById("pdfModal").classList.add("open");
-      document.body.style.overflow = "hidden";
+  if (isAndroid) {
+    // Try opening in a new tab first (works if AirDroid allows it)
+    const w = window.open(href, "_blank");
+    // If new tab was blocked, fall back to same-tab navigation
+    if (!w || w.closed || typeof w.closed === "undefined") {
+      window.location.href = href;
     }
+    return;
+  }
+
+  // Normal iframe modal for desktop / iOS
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalDownload").href     = href;
+  document.getElementById("modalDownload").download = href.split("/").pop();
+  document.getElementById("pdfFrame").src           = href;
+  document.getElementById("pdfModal").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
 
     function closeModal() {
       document.getElementById("pdfModal").classList.remove("open");
