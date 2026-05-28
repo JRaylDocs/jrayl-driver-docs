@@ -15,7 +15,7 @@
  * To force a full refresh on all tablets, bump CACHE_VERSION below.
  */
 
-const CACHE_VERSION = "jrayl-v6";              // ← bump this to force all tablets to refresh
+const CACHE_VERSION = "jrayl-v7";              // ← bump this to force all tablets to refresh
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_DOCS    = `${CACHE_VERSION}-docs`;
 
