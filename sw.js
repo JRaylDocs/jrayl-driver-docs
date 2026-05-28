@@ -2,18 +2,14 @@
  * sw.js — JRayl Driver Docs Service Worker
  *
  * Strategy:
- *  - App shell (HTML, CSS, logo, manifest) → Cache First
- *  - docs-manifest.json                    → Network First (always try fresh)
- *  - Individual doc files (PDF / docx)     → Cache First, falling back to network
+ *  - App shell (HTML, CSS, logo)                  → Cache First
+ *  - docs-manifest.json + docs-previews.json      → Network First (always fresh)
+ *  - Individual doc files + preview PNGs (/docs/) → Cache First, fall back to network
  *
- * Background pre-caching:
- *  On install the SW fetches docs-manifest.json and pre-caches every
- *  document listed in it — drivers don't need to open each file first.
- *
- * To force a full refresh on all tablets, bump CACHE_VERSION.
+ * To force a full refresh on all tablets, bump CACHE_VERSION below.
  */
 
-const CACHE_VERSION = "jrayl-v3";
+const CACHE_VERSION = "jrayl-v4";              // ← bumped from v3 to force refresh
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_DOCS    = `${CACHE_VERSION}-docs`;
 
@@ -24,34 +20,49 @@ const SHELL_FILES = [
   "./style.css",
   "./jrayl-logo.png",
   "./site.webmanifest",
-  "./docs-manifest.json",
 ];
+
+// JSON data files that must always be tried fresh from the network first
+const NETWORK_FIRST = ["docs-manifest.json", "docs-previews.json"];
 
 // ─── Install ──────────────────────────────────────────────────────────────────
 self.addEventListener("install", event => {
   event.waitUntil(
     (async () => {
-      // 1. Cache the app shell
+      // 1. Cache the app shell (each file individually so one failure won't abort)
       const staticCache = await caches.open(CACHE_STATIC);
-      await staticCache.addAll(SHELL_FILES);
+      await Promise.allSettled(SHELL_FILES.map(f => staticCache.add(f)));
 
-      // 2. Fetch the manifest and pre-cache every doc in the background
+      // 2. Pre-cache every doc AND every preview image in the background
       try {
         const res  = await fetch("./docs-manifest.json", { cache: "no-store" });
-        const docs = await res.json();
+        const docs  = await res.json();
         const docCache = await caches.open(CACHE_DOCS);
 
-        // Cache each file individually — if one fails, keep going
+        // Original document files
         await Promise.allSettled(
           docs.map(async doc => {
             try {
-              const docRes = await fetch(doc.href);
-              if (docRes.ok) await docCache.put(doc.href, docRes);
-            } catch {
-              // File unavailable — skip silently
-            }
+              const r = await fetch(doc.href);
+              if (r.ok) await docCache.put(doc.href, r);
+            } catch {}
           })
         );
+
+        // Preview PNGs from docs-previews.json
+        try {
+          const pRes = await fetch("./docs-previews.json", { cache: "no-store" });
+          const pMap = await pRes.json();
+          const allPngs = Object.values(pMap).flat();
+          await Promise.allSettled(
+            allPngs.map(async src => {
+              try {
+                const r = await fetch(src);
+                if (r.ok) await docCache.put(src, r);
+              } catch {}
+            })
+          );
+        } catch {}
       } catch {
         // Manifest unavailable — shell-only cache is fine
       }
@@ -79,13 +90,13 @@ self.addEventListener("fetch", event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // docs-manifest.json → Network First so new docs always appear
-  if (url.pathname.endsWith("docs-manifest.json")) {
+  // JSON data files → Network First so new docs/previews always appear
+  if (NETWORK_FIRST.some(name => url.pathname.endsWith(name))) {
     event.respondWith(networkFirstThenCache(request, CACHE_STATIC));
     return;
   }
 
-  // Doc files → Cache First (pre-cached on install)
+  // Doc files and preview images → Cache First (pre-cached on install)
   if (url.pathname.includes("/docs/")) {
     event.respondWith(cacheFirstThenNetwork(request, CACHE_DOCS));
     return;
