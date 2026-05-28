@@ -1,0 +1,47 @@
+name: Generate PDF Previews
+
+# Runs whenever PDFs (or the scripts) change on the main branch,
+# and can also be triggered manually from the Actions tab.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**/*.pdf"
+      - "docs/**/*.PDF"
+      - "generate-previews.mjs"
+      - ".github/workflows/generate-previews.yml"
+  workflow_dispatch:
+
+# Allow the workflow to commit the generated images back to the repo
+permissions:
+  contents: write
+
+jobs:
+  build-previews:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pdf-to-img
+        run: npm install pdf-to-img@6.1.0
+
+      - name: Generate PNG previews
+        run: node generate-previews.mjs
+
+      - name: Commit previews back to the repo
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/**/_previews/*.png docs-previews.json
+          if git diff --staged --quiet; then
+            echo "No preview changes to commit."
+          else
+            git commit -m "Auto-generate PDF previews [skip ci]"
+            git push
+          fi
