@@ -9,6 +9,11 @@ on:
 permissions:
   contents: write
 
+# Only one run at a time — prevents two runs trying to push at once
+concurrency:
+  group: generate-previews
+  cancel-in-progress: false
+
 jobs:
   build-previews:
     runs-on: ubuntu-latest
@@ -34,7 +39,20 @@ jobs:
           git add -A
           if git diff --staged --quiet; then
             echo "No preview changes to commit."
-          else
-            git commit -m "Auto-generate PDF previews [skip ci]"
-            git push
+            exit 0
           fi
+          git commit -m "Auto-generate PDF previews [skip ci]"
+          # Retry push up to 3 times — if a new commit landed while we were
+          # generating previews, pull (rebase) and try again. This prevents
+          # the race condition where a user uploads a new PDF while the
+          # workflow is running and the push gets rejected.
+          for i in 1 2 3; do
+            if git push; then
+              echo "Push succeeded on attempt $i."
+              exit 0
+            fi
+            echo "Push rejected on attempt $i, pulling latest and retrying..."
+            git pull --rebase origin main || exit 1
+          done
+          echo "Push failed after 3 attempts."
+          exit 1
