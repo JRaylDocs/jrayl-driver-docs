@@ -41,6 +41,7 @@ const OUT_JSON = path.join(__dirname, "docs-previews.json");
 const SCALE    = 2.0; // higher = sharper images, larger files. 2.0 is a good balance.
 
 const previews = {};
+let removedCount = 0;
 
 for (const folder of FOLDERS) {
   const folderPath = path.join(DOCS_DIR, folder);
@@ -49,9 +50,29 @@ for (const folder of FOLDERS) {
   const pdfs = fs.readdirSync(folderPath).filter(f => /\.pdf$/i.test(f) &&
     fs.statSync(path.join(folderPath, f)).isFile());
 
-  if (pdfs.length === 0) continue;
-
   const previewDir = path.join(folderPath, "_previews");
+
+  // ── CLEANUP ────────────────────────────────────────────────────────────────
+  // Wipe the _previews folder and rebuild from scratch every run. This way,
+  // deleting or replacing a PDF can never leave orphaned PNGs behind, and a PDF
+  // that loses pages (e.g. 24 → 20) won't keep the extra stale page images.
+  if (fs.existsSync(previewDir)) {
+    for (const old of fs.readdirSync(previewDir)) {
+      if (/\.png$/i.test(old)) {
+        fs.unlinkSync(path.join(previewDir, old));
+        removedCount++;
+      }
+    }
+  }
+
+  if (pdfs.length === 0) {
+    // No PDFs here anymore — remove the now-empty _previews folder if present
+    if (fs.existsSync(previewDir) && fs.readdirSync(previewDir).length === 0) {
+      fs.rmdirSync(previewDir);
+    }
+    continue;
+  }
+
   if (!fs.existsSync(previewDir)) fs.mkdirSync(previewDir, { recursive: true });
 
   for (const file of pdfs) {
@@ -78,5 +99,6 @@ for (const folder of FOLDERS) {
 }
 
 fs.writeFileSync(OUT_JSON, JSON.stringify(previews, null, 2));
-console.log(`\n✨ docs-previews.json written with ${Object.keys(previews).length} PDF(s).`);
+console.log(`\n🧹 Cleared ${removedCount} old preview image(s) before rebuild.`);
+console.log(`✨ docs-previews.json written with ${Object.keys(previews).length} PDF(s).`);
 console.log(`📁 PNG previews saved under each docs/<folder>/_previews/ folder.\n`);
