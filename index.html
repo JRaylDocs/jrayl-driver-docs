@@ -4,29 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JRayl Driver Support Documents</title>
- 
+
   <!-- PWA -->
   <link rel="manifest" href="site.webmanifest" />
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="apple-mobile-web-app-title" content="JRayl Docs" />
- 
+
   <link rel="stylesheet" href="style.css" />
- 
+
   <style>
     main { padding: 16px; }
- 
+
     .docs-section {
       max-width: 960px;
       margin: 0 auto;
     }
- 
+
     .site-header {
       text-align: center;
       margin-bottom: 28px;
     }
- 
+
     .site-logo {
       max-width: 180px;
       width: 100%;
@@ -34,7 +34,7 @@
       margin: 0 auto 12px;
       display: block;
     }
- 
+
     .site-message {
       display: inline-block;
       margin: 12px auto 0;
@@ -49,7 +49,7 @@
       color: #000000;
       max-width: 920px;
     }
- 
+
     /* ── Offline banner ── */
     #offlineBanner {
       display: none;
@@ -60,17 +60,17 @@
       padding: 10px 16px;
       font-size: 0.95rem;
     }
- 
+
     .cards-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 12px;
     }
- 
+
     @media (min-width: 720px) {
       .cards-grid { grid-template-columns: 1fr 1fr; }
     }
- 
+
     .doc-card {
       padding: 14px;
       border-radius: 12px;
@@ -79,14 +79,14 @@
       gap: 6px;
       position: relative;
     }
- 
+
     .doc-card h3 {
       margin: 0;
       font-size: 1.05rem;
       line-height: 1.25;
       padding-right: 52px;
     }
- 
+
     /* ── NEW badge ── */
     .badge-new {
       position: absolute;
@@ -101,21 +101,21 @@
       border-radius: 6px;
       text-transform: uppercase;
     }
- 
+
     /* ── Timestamp ── */
     .doc-meta {
       font-size: 0.78rem;
       color: #6b7280;
       margin: 0;
     }
- 
+
     /* ── Card buttons row ── */
     .card-actions {
       display: flex;
       gap: 8px;
       margin-top: 4px;
     }
- 
+
     .doc-btn {
       flex: 1;
       display: inline-flex;
@@ -129,7 +129,7 @@
       cursor: pointer;
       border: none;
     }
- 
+
     .btn-download {
       flex: 0 0 auto;
       background: transparent;
@@ -138,7 +138,7 @@
       font-size: 1.1rem;
       padding: 10px 14px;
     }
- 
+
     /* ── PDF Viewer Modal ── */
     #pdfModal {
       display: none;
@@ -148,11 +148,11 @@
       background: rgba(0,0,0,0.82);
       flex-direction: column;
     }
- 
+
     #pdfModal.open {
       display: flex;
     }
- 
+
     .modal-toolbar {
       display: flex;
       align-items: center;
@@ -163,7 +163,7 @@
       gap: 12px;
       flex-shrink: 0;
     }
- 
+
     .modal-title {
       font-weight: 700;
       font-size: 1rem;
@@ -172,7 +172,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
- 
+
     .modal-toolbar a,
     .modal-toolbar button {
       background: #fff;
@@ -186,12 +186,12 @@
       text-decoration: none;
       white-space: nowrap;
     }
- 
+
     .modal-close {
       background: #dc2626 !important;
       color: #fff !important;
     }
- 
+
     /* Accordion headers */
     .accordion-header {
       cursor: pointer;
@@ -202,18 +202,18 @@
       margin-top: 28px;
       margin-bottom: 8px;
     }
- 
+
     .accordion-header .chev {
       margin-left: auto;
       font-weight: 700;
     }
- 
+
     .nested-wrap {
       margin-top: 10px;
       padding-left: 10px;
       border-left: 4px solid rgba(0,0,0,0.12);
     }
- 
+
     .nested-header {
       cursor: pointer;
       user-select: none;
@@ -224,14 +224,14 @@
       font-size: 1.05rem;
       font-weight: 800;
     }
- 
+
     .nested-header .chev {
       margin-left: auto;
       font-weight: 900;
     }
- 
+
     .hidden { display: none; }
- 
+
     /* ── Emergency Banner ── */
     .emergency-banner {
       background: #7f1d1d;
@@ -240,7 +240,7 @@
       text-align: center;
       font-family: Arial, sans-serif;
     }
- 
+
     .emergency-banner h2 {
       margin: 0 0 8px;
       font-size: 0.85rem;
@@ -249,21 +249,21 @@
       text-transform: uppercase;
       opacity: 0.85;
     }
- 
+
     .emergency-contacts {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 10px 28px;
     }
- 
+
     .emergency-contact {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 2px;
     }
- 
+
     .emergency-contact .label {
       font-size: 0.7rem;
       font-weight: 700;
@@ -271,7 +271,7 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
- 
+
     .emergency-contact a {
       color: #fff;
       font-size: 1.1rem;
@@ -279,50 +279,50 @@
       text-decoration: none;
       letter-spacing: 0.5px;
     }
- 
+
     .emergency-contact a:hover {
       text-decoration: underline;
     }
   </style>
 </head>
- 
+
 <body>
- 
+
   <!-- Offline banner -->
   <div id="offlineBanner">
     ⚠️ You are offline — all downloaded documents are still available
   </div>
- 
+
   <header class="site-header">
     <img src="jrayl-logo.png" alt="JRayl Transport Logo" class="site-logo" />
     <h1>Driver Support Documents</h1>
     <p>Your quick-access resource hub</p>
     <div class="site-message" id="siteMessage" style="display:none"></div>
   </header>
- 
+
   <main>
     <section class="docs-section">
- 
+
       <h2 class="accordion-header" onclick="toggleAccordion('programs')">
         Driver Programs <span id="chev-programs" class="chev">▶</span>
       </h2>
       <div id="panel-programs" class="cards-grid hidden"></div>
- 
+
       <h2 class="accordion-header" onclick="toggleAccordion('reference')">
         Driver Reference <span id="chev-reference" class="chev">▶</span>
       </h2>
       <div id="panel-reference" class="cards-grid hidden"></div>
- 
+
       <h2 class="accordion-header" onclick="toggleAccordion('updates')">
         JRayl Updates <span id="chev-updates" class="chev">▶</span>
       </h2>
       <div id="panel-updates" class="cards-grid hidden"></div>
- 
+
       <h2 class="accordion-header" onclick="toggleAccordion('employee')">
         JRayl Employee Docs <span id="chev-employee" class="chev">▶</span>
       </h2>
       <div id="panel-employee" class="cards-grid hidden"></div>
- 
+
       <h2 class="accordion-header" onclick="toggleAccordion('dot')">
         DOT Compliance <span id="chev-dot" class="chev">▶</span>
       </h2>
@@ -335,15 +335,15 @@
           <div id="panel-trailer" class="cards-grid hidden"></div>
         </div>
       </div>
- 
+
       <h2 class="accordion-header" onclick="toggleAccordion('other')">
         JRayl People Portal <span id="chev-other" class="chev">▶</span>
       </h2>
       <div id="panel-other" class="cards-grid hidden"></div>
- 
+
     </section>
   </main>
- 
+
   <!-- ── Emergency Banner ── always visible ── -->
   <div class="emergency-banner">
     <h2>🚨 Emergency Contacts</h2>
@@ -358,11 +358,11 @@
       </div>
     </div>
   </div>
- 
+
   <footer>
     <p>© JRayl Transport – Driver Resource Portal</p>
   </footer>
- 
+
   <!-- ── PDF Viewer Modal (PDF.js canvas renderer) ─────────────────────────── -->
   <div id="pdfModal" role="dialog" aria-modal="true" aria-label="Document viewer">
     <div class="modal-toolbar">
@@ -370,7 +370,7 @@
       <a id="modalDownload" href="#" download>⬇ Download</a>
       <button class="modal-close" onclick="closeModal()">✕ Close</button>
     </div>
- 
+
     <!-- PDF.js renders here — one canvas per page -->
     <div id="pdfViewer" style="
       flex: 1;
@@ -387,13 +387,13 @@
       </p>
     </div>
   </div>
- 
+
   <script>
     // ─── Config ───────────────────────────────────────────────────────────────
     const NEW_BADGE_DAYS = 7;
     const ANALYTICS_URL  = "https://script.google.com/macros/s/AKfycbzZfL1YUQQAD1YrpIAYStoEUNNyDOfAusULO2yJyPElDS8mdBlaHwvMDBUzdf7-Fy3e/exec";
     const SW_CACHE_NAME  = "jrayl-v1";
- 
+
     // ─── Analytics ────────────────────────────────────────────────────────────
     function trackOpen(title, group, href) {
       if (!ANALYTICS_URL || ANALYTICS_URL === "YOUR_APPS_SCRIPT_URL_HERE") return;
@@ -406,7 +406,7 @@
       const img = new Image();
       img.src = `${ANALYTICS_URL}?${params.toString()}`;
     }
- 
+
     // ─── Offline banner ───────────────────────────────────────────────────────
     function updateOnlineBanner() {
       document.getElementById("offlineBanner").style.display =
@@ -415,20 +415,20 @@
     window.addEventListener("online",  updateOnlineBanner);
     window.addEventListener("offline", updateOnlineBanner);
     updateOnlineBanner();
- 
+
     // ─── PWA Service Worker ───────────────────────────────────────────────────
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("./sw.js").catch(err =>
         console.warn("SW registration failed:", err)
       );
     }
- 
+
     // ─── Document Viewer (PNG previews — works in AirDroid lockdown) ─────────────
     // AirDroid intercepts PDFs and forces a download, but shows PNG images inline.
     // So PDFs are displayed using pre-generated PNG previews (see generate-previews.mjs).
     // docs-previews.json maps each PDF's href to its list of preview image paths.
     let previewMap = null;
- 
+
     async function loadPreviewMap() {
       if (previewMap) return previewMap;
       try {
@@ -440,26 +440,31 @@
       return previewMap;
     }
     loadPreviewMap(); // warm it up on page load
- 
+
     async function openModal(href, title, group) {
       trackOpen(title, group, href);
- 
+
       document.getElementById("modalTitle").textContent = title;
       document.getElementById("modalDownload").href     = href;
       document.getElementById("modalDownload").download = href.split("/").pop();
       document.getElementById("pdfModal").classList.add("open");
       document.body.style.overflow = "hidden";
- 
-      const viewer  = document.getElementById("pdfViewer");
-      const loading = document.getElementById("pdfLoading");
+
+      const viewer = document.getElementById("pdfViewer");
       viewer.innerHTML = "";
-      viewer.appendChild(loading);
+
+      // Recreate the loading element fresh each time. (closeModal() clears the
+      // viewer's contents, which used to permanently delete the old #pdfLoading
+      // element — so the second open would crash and nothing would show.)
+      const loading = document.createElement("p");
+      loading.id = "pdfLoading";
+      loading.style.cssText = "color:#fff;margin-top:40px;font-size:1rem;";
       loading.textContent = "Loading document…";
-      loading.style.display = "block";
- 
+      viewer.appendChild(loading);
+
       const map   = await loadPreviewMap();
       const pages = map[href];
- 
+
       // If we have PNG previews for this PDF, show those (works in AirDroid)
       if (pages && pages.length) {
         loading.style.display = "none";
@@ -475,31 +480,31 @@
         });
         return;
       }
- 
+
       // No preview available (e.g. a non-PDF doc, or previews not generated yet)
       // Fall back to opening the file directly.
       loading.textContent = "Opening document…";
       const w = window.open(href, "_blank");
       if (!w) window.location.href = href;
     }
- 
+
     function closeModal() {
       document.getElementById("pdfModal").classList.remove("open");
       document.getElementById("pdfViewer").innerHTML = "";
       document.body.style.overflow = "";
     }
- 
+
     document.getElementById("pdfModal").addEventListener("click", e => {
       if (e.target === e.currentTarget) closeModal();
     });
- 
+
     document.addEventListener("keydown", e => {
       if (e.key === "Escape") closeModal();
     });
- 
+
     // ─── Accordion ────────────────────────────────────────────────────────────
     const panels = ["programs", "reference", "updates", "employee", "dot", "other"];
- 
+
     function closeAllExcept(openKey) {
       panels.forEach(key => {
         if (key === "dot") {
@@ -513,7 +518,7 @@
         if (key !== openKey) { p.classList.add("hidden"); c.textContent = "▶"; }
       });
     }
- 
+
     function toggleAccordion(key) {
       if (key === "dot") {
         const p = document.getElementById("panel-dot");
@@ -531,14 +536,14 @@
       if (closed) { p.classList.remove("hidden"); c.textContent = "▼"; }
       else { p.classList.add("hidden"); c.textContent = "▶"; }
     }
- 
+
     function closeNestedTrailer() {
       const p = document.getElementById("panel-trailer");
       const c = document.getElementById("chev-trailer");
       if (p) p.classList.add("hidden");
       if (c) c.textContent = "▶";
     }
- 
+
     function toggleNested(which) {
       if (which !== "trailer") return;
       const p = document.getElementById("panel-trailer");
@@ -547,14 +552,14 @@
       if (closed) { p.classList.remove("hidden"); c.textContent = "▼"; }
       else { p.classList.add("hidden"); c.textContent = "▶"; }
     }
- 
+
     // ─── Card builder ─────────────────────────────────────────────────────────
     function isNew(dateAdded) {
       if (!dateAdded) return false;
       const diffDays = (new Date() - new Date(dateAdded)) / (1000 * 60 * 60 * 24);
       return diffDays <= NEW_BADGE_DAYS;
     }
- 
+
     function formatDate(isoString) {
       if (!isoString) return null;
       const d = new Date(isoString);
@@ -566,58 +571,58 @@
       const h12    = hours % 12 || 12;
       return `${date} ${h12}:${mins} ${ampm}`;
     }
- 
+
     function createCard(doc) {
       const card = document.createElement("div");
       card.className = "doc-card";
- 
+
       if (isNew(doc.dateAdded)) {
         const badge = document.createElement("span");
         badge.className   = "badge-new";
         badge.textContent = "New";
         card.appendChild(badge);
       }
- 
+
       const title = document.createElement("h3");
       title.textContent = doc.title;
       card.appendChild(title);
- 
+
       if (doc.dateModified) {
         const meta = document.createElement("p");
         meta.className   = "doc-meta";
         meta.textContent = `Updated ${formatDate(doc.dateModified)}`;
         card.appendChild(meta);
       }
- 
+
       const actions = document.createElement("div");
       actions.className = "card-actions";
- 
+
       const viewBtn = document.createElement("button");
       viewBtn.className   = "doc-btn btn-view";
       viewBtn.textContent = doc.type === "pdf" ? "View PDF" : "View Document";
       viewBtn.addEventListener("click", () => openModal(doc.href, doc.title, doc.group));
- 
+
       const dlBtn = document.createElement("a");
       dlBtn.className   = "doc-btn btn-download";
       dlBtn.href        = doc.href;
       dlBtn.download    = doc.href.split("/").pop();
       dlBtn.title       = "Download";
       dlBtn.textContent = "⬇";
- 
+
       actions.appendChild(viewBtn);
       actions.appendChild(dlBtn);
       card.appendChild(actions);
- 
+
       return card;
     }
- 
+
     function renderList(containerId, docs) {
       const container = document.getElementById(containerId);
       if (!container) return;
       container.innerHTML = "";
       docs.forEach(doc => container.appendChild(createCard(doc)));
     }
- 
+
     // ─── Shared error renderer ────────────────────────────────────────────────
     function showLoadError() {
       const errorMsg = "<p style='color:red;padding:8px'>⚠️ Could not load documents. Check your connection.</p>";
@@ -626,7 +631,7 @@
         el.classList.remove("hidden");
       });
     }
- 
+
     // ─── Load message banner ──────────────────────────────────────────────────
     async function loadMessage() {
       try {
@@ -652,7 +657,7 @@
         if (el) el.style.display = "none";
       }
     }
- 
+
     // ─── Load manifest ────────────────────────────────────────────────────────
     async function loadDocs() {
       let docs;
@@ -681,10 +686,10 @@
       renderList("panel-trailer",   docs.filter(d => d.group === "maintenance"));
       renderList("panel-other",     docs.filter(d => d.group === "other"));
     }
- 
+
     loadDocs();
     loadMessage();
   </script>
- 
+
 </body>
 </html>
