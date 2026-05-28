@@ -57,10 +57,14 @@
   // ─── PDF Modal ────────────────────────────────────────────────────────────
 function openModal(href, title, group) {
   trackOpen(title, group, href);
-  const w = window.open(href, "_blank");
-  if (!w || w.closed || typeof w.closed === "undefined") {
-    window.location.href = href;
-  }
+  const fullUrl = new URL(href, window.location.href).toString();
+  const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+  document.getElementById("modalTitle").textContent    = title;
+  document.getElementById("modalDownload").href        = href;
+  document.getElementById("modalDownload").download    = href.split("/").pop();
+  document.getElementById("pdfFrame").src              = viewerUrl;
+  document.getElementById("pdfModal").classList.add("open");
+  document.body.style.overflow = "hidden";
 }
 
 function closeModal() {
