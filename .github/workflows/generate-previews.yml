@@ -41,11 +41,12 @@ jobs:
             echo "No preview changes to commit."
             exit 0
           fi
-          git commit -m "Auto-generate PDF previews [skip ci]"
-          # Retry push up to 3 times — if a new commit landed while we were
-          # generating previews, pull (rebase) and try again. This prevents
-          # the race condition where a user uploads a new PDF while the
-          # workflow is running and the push gets rejected.
+          # NOTE: do NOT include [skip ci] in the commit message — Netlify
+          # honors that and would skip deploying these changes. GitHub Actions
+          # already prevents this commit from re-triggering this same workflow
+          # (commits made by GITHUB_TOKEN don't trigger other workflow runs).
+          git commit -m "Auto-generate PDF previews"
+          # Retry push up to 3 times if rejected (race condition with user commits)
           for i in 1 2 3; do
             if git push; then
               echo "Push succeeded on attempt $i."
