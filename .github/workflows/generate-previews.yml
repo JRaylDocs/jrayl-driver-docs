@@ -9,7 +9,10 @@ on:
 permissions:
   contents: write
 
-# Only one run at a time — prevents two runs trying to push at once
+# Only one run at a time — prevents two runs racing to push at once.
+# (Note: this does NOT guard against a human pushing mid-run, which is the
+#  race that previously broke the rebase. The regenerate-on-latest loop below
+#  handles that case.)
 concurrency:
   group: generate-previews
   cancel-in-progress: false
@@ -29,31 +32,38 @@ jobs:
       - name: Install pdf-to-img
         run: npm install pdf-to-img@6.1.0
 
-      - name: Generate PNG previews
-        run: node generate-previews.mjs
-
-      - name: Commit previews back to the repo
+      - name: Generate previews and push (resilient to concurrent pushes)
         run: |
-          git config user.name "github-actions[bot]"
+          git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --staged --quiet; then
-            echo "No preview changes to commit."
-            exit 0
-          fi
-          # NOTE: do NOT include [skip ci] in the commit message — Netlify
-          # honors that and would skip deploying these changes. GitHub Actions
-          # already prevents this commit from re-triggering this same workflow
-          # (commits made by GITHUB_TOKEN don't trigger other workflow runs).
-          git commit -m "Auto-generate PDF previews"
-          # Retry push up to 3 times if rejected (race condition with user commits)
-          for i in 1 2 3; do
-            if git push; then
-              echo "Push succeeded on attempt $i."
+
+          for attempt in 1 2 3 4 5; do
+            # Always (re)generate against the very latest main. Because the
+            # previews are fully derived from the PDFs at HEAD, regenerating on
+            # top of the newest main can never produce a rename/delete conflict
+            # the way `git pull --rebase` did — there is nothing to merge.
+            git fetch origin main
+            git reset --hard origin/main
+
+            node generate-previews.mjs
+
+            git add -A
+            if git diff --staged --quiet; then
+              echo "No preview changes to commit."
               exit 0
             fi
-            echo "Push rejected on attempt $i, pulling latest and retrying..."
-            git pull --rebase origin main || exit 1
+
+            # Do NOT put [skip ci] here — Netlify honors it and would skip the
+            # deploy. Commits by GITHUB_TOKEN don't re-trigger this workflow.
+            git commit -m "Auto-generate PDF previews"
+
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt $attempt."
+              exit 0
+            fi
+
+            echo "Push rejected on attempt $attempt (someone pushed mid-run); regenerating on latest main..."
           done
-          echo "Push failed after 3 attempts."
+
+          echo "Push failed after 5 attempts."
           exit 1
