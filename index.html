@@ -828,6 +828,40 @@
 
     loadDocs();
     loadMessage();
+
+    // ─── Auto-refresh (for MDM tablets that can't be refreshed by hand) ─────────
+    // The lockdown tablets have no reload button and their cache can't be cleared
+    // on the device. So the page reloads ITSELF when it's safe to do so, which —
+    // combined with the no-cache headers on index.html — pulls in the latest
+    // deploy without anyone touching the tablet.
+    //
+    // It reloads only when a driver won't be interrupted: either after a stretch
+    // of inactivity, or once the page has been open a long time — and never while
+    // a document is open on screen. The ?ts= cache-buster guarantees the WebView
+    // fetches a fresh page instead of serving the stale one.
+    (function autoRefresh() {
+      const IDLE_MS    = 15 * 60 * 1000;      // reload after 15 min idle
+      const MAX_AGE_MS = 6  * 60 * 60 * 1000; // …or once open for 6 hours
+      const loadedAt   = Date.now();
+      let   lastActive = Date.now();
+
+      ["click", "keydown", "touchstart", "pointerdown", "scroll"].forEach(evt =>
+        document.addEventListener(evt, () => { lastActive = Date.now(); }, { passive: true }));
+
+      function modalOpen() {
+        const m = document.getElementById("pdfModal");
+        return m && m.classList.contains("open");
+      }
+
+      setInterval(() => {
+        if (modalOpen()) return;                 // never interrupt a driver mid-read
+        const idle = Date.now() - lastActive;
+        const age  = Date.now() - loadedAt;
+        if (idle >= IDLE_MS || age >= MAX_AGE_MS) {
+          location.replace(location.pathname + "?ts=" + Date.now());
+        }
+      }, 60 * 1000); // check once a minute
+    })();
   </script>
 
 </body>
