@@ -283,6 +283,28 @@
     .emergency-contact a:hover {
       text-decoration: underline;
     }
+
+    /* Trailer registration search */
+    .trailer-search { margin-bottom: 14px; }
+    #trailerSearch {
+      width: 100%;
+      max-width: 420px;
+      padding: 12px 14px;
+      font-size: 1.05rem;
+      border: 2px solid #9b1c1c;
+      border-radius: 8px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    #trailerSearch:focus {
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+    }
+    .trailer-hint {
+      margin: 8px 2px 12px;
+      color: #555;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 
@@ -332,7 +354,17 @@
           <div class="nested-header" onclick="toggleNested('trailer')">
             Trailer Registration <span id="chev-trailer" class="chev">▶</span>
           </div>
-          <div id="panel-trailer" class="cards-grid hidden"></div>
+          <div id="panel-trailer" class="hidden">
+            <div class="trailer-search">
+              <input id="trailerSearch" type="search" inputmode="search"
+                     autocomplete="off" autocapitalize="characters" spellcheck="false"
+                     placeholder="Search by trailer number (e.g. 48F336)…"
+                     aria-label="Search trailer registrations by number" />
+              <p id="trailerHint" class="trailer-hint"></p>
+              <div id="trailerResults" class="cards-grid"></div>
+            </div>
+            <div id="maintenanceDocs" class="cards-grid"></div>
+          </div>
         </div>
       </div>
 
@@ -654,6 +686,82 @@
       docs.forEach(doc => container.appendChild(createCard(doc)));
     }
 
+    // ─── Trailer registration search ──────────────────────────────────────────
+    // Per-trailer registration PDFs live in docs/trailers/. They are deliberately
+    // NOT in docs-manifest.json, so they never render as thousands of cards — but
+    // they ARE in docs-previews.json, so the viewer can show each slip. This
+    // search filters that already-loaded preview map by trailer number.
+    const TRAILER_PREFIX      = "docs/trailers/";
+    const TRAILER_MAX_RESULTS = 25;
+    let trailerIndex = null;
+
+    function parseTrailer(href) {
+      const file = href.slice(TRAILER_PREFIX.length).replace(/\.pdf$/i, "");
+      const m = file.match(/^(.*?)[_-](\d{4})$/); // {unit}_{expiryYear}
+      return m ? { unit: m[1], expiry: m[2], href }
+               : { unit: file, expiry: "", href };
+    }
+
+    async function buildTrailerIndex() {
+      if (trailerIndex) return trailerIndex;
+      const map = await loadPreviewMap();
+      trailerIndex = Object.keys(map)
+        .filter(h => h.startsWith(TRAILER_PREFIX))
+        .map(parseTrailer)
+        .sort((a, b) => a.unit.localeCompare(b.unit, undefined, { numeric: true }));
+      return trailerIndex;
+    }
+
+    function trailerCard(t) {
+      return createCard({
+        title: t.expiry ? `${t.unit} — expires ${t.expiry}` : t.unit,
+        href:  t.href,
+        group: "trailers",
+        type:  "pdf",
+      });
+    }
+
+    async function runTrailerSearch() {
+      const input   = document.getElementById("trailerSearch");
+      const results = document.getElementById("trailerResults");
+      const hint    = document.getElementById("trailerHint");
+      if (!input) return;
+
+      const q   = input.value.trim().toLowerCase();
+      const idx = await buildTrailerIndex();
+      results.innerHTML = "";
+
+      if (idx.length === 0) {
+        hint.textContent = "No trailer registrations are loaded yet.";
+        return;
+      }
+      if (!q) {
+        hint.textContent = `${idx.length} trailer registrations on file — type a number to search.`;
+        return;
+      }
+
+      const matches = idx.filter(t => t.unit.toLowerCase().includes(q));
+      if (matches.length === 0) {
+        hint.textContent = `No trailer matches \u201C${input.value.trim()}\u201D.`;
+        return;
+      }
+      hint.textContent = matches.length > TRAILER_MAX_RESULTS
+        ? `Showing the first ${TRAILER_MAX_RESULTS} of ${matches.length} matches \u2014 keep typing to narrow it down.`
+        : `${matches.length} match${matches.length === 1 ? "" : "es"}.`;
+      matches.slice(0, TRAILER_MAX_RESULTS).forEach(t => results.appendChild(trailerCard(t)));
+    }
+
+    (function initTrailerSearch() {
+      const input = document.getElementById("trailerSearch");
+      if (!input) return;
+      let timer;
+      input.addEventListener("input", () => {
+        clearTimeout(timer);
+        timer = setTimeout(runTrailerSearch, 120);
+      });
+      loadPreviewMap().then(runTrailerSearch); // set the initial count hint
+    })();
+
     // ─── Shared error renderer ────────────────────────────────────────────────
     function showLoadError() {
       const errorMsg = "<p style='color:red;padding:8px'>⚠️ Could not load documents. Check your connection.</p>";
@@ -714,7 +822,7 @@
       renderList("panel-updates",   docs.filter(d => d.group === "updates"));
       renderList("panel-employee",  docs.filter(d => d.group === "employee"));
       renderList("dotDocs",         docs.filter(d => d.group === "dot"));
-      renderList("panel-trailer",   docs.filter(d => d.group === "maintenance"));
+      renderList("maintenanceDocs", docs.filter(d => d.group === "maintenance"));
       renderList("panel-other",     docs.filter(d => d.group === "other"));
     }
 
