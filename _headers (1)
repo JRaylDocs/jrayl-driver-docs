@@ -1,0 +1,22 @@
+# Netlify headers — drop this file at the repo root (same level as index.html).
+#
+# The AirDroid lockdown WebView caches aggressively, so after a deploy the
+# tablets can keep showing an old version of the page until their cache is
+# cleared. These rules force the browser to re-check the app shell and the
+# data files on every load, so a deploy shows up immediately — while still
+# letting the heavy image/PDF previews cache normally for speed.
+
+# App shell — always revalidate.
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+
+# Data that drives the page (doc list + preview map) — always revalidate,
+# so newly added documents and trailers appear without a cache clear.
+/docs-manifest.json
+  Cache-Control: no-cache
+/docs-previews.json
+  Cache-Control: no-cache
+/message.json
+  Cache-Control: no-cache
